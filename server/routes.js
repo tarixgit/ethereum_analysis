@@ -1,8 +1,9 @@
-module.exports = [{
-    method: 'GET',
-    path: '/',
+module.exports = [
+  {
+    method: "GET",
+    path: "/",
     handler: (request, h) => {
-
-    return 'Hello World!';
-}
-}]
+      return "Hello World!";
+    }
+  }
+];

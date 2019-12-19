@@ -1,25 +1,61 @@
-'use strict';
+("use strict");
 
-const Hapi = require('@hapi/hapi');
-const routes = require('./server/routes');
+const { ApolloServer } = require("apollo-server-hapi");
+const Hapi = require("@hapi/hapi");
+const routes = require("./server/routes");
 
-const init = async () => {
+const HOST = "localhost";
+const PORT = 3000;
 
-    const server = Hapi.server({
-        port: 3000,
-        host: 'localhost'
-    });
+// Some fake data
+const books = [
+  {
+    title: "Harry Potter and the Sorcerer's stone",
+    author: "J.K. Rowling"
+  },
+  {
+    title: "Jurassic Park",
+    author: "Michael Crichton"
+  }
+];
 
-    server.route(routes);
+// The GraphQL schema in string form
+const typeDefs = `
+  type Query { books: [Book] }
+  type Book { title: String, author: String }
+`;
 
-    await server.start();
-    console.log('Server running on %s', server.info.uri);
+// The resolvers
+const resolvers = {
+  Query: { books: () => books }
 };
 
-process.on('unhandledRejection', (err) => {
+// Put together a schema
+const server = new ApolloServer({
+  typeDefs,
+  resolvers
+});
 
-    console.log(err);
-process.exit(1);
+const app = Hapi.server({
+  host: HOST,
+  port: PORT
+});
+
+const init = async () => {
+  await server.applyMiddleware({
+    app
+  });
+  await server.installSubscriptionHandlers(app.listener);
+
+  app.route(routes);
+
+  await app.start();
+  console.log("Server running on %s", app.info.uri);
+};
+
+process.on("unhandledRejection", err => {
+  console.log(err);
+  process.exit(1);
 });
 
 init();
