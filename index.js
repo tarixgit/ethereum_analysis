@@ -1,8 +1,9 @@
 ("use strict");
 
-const { ApolloServer } = require("apollo-server-hapi");
+const { ApolloServer, gql } = require("apollo-server-hapi");
 const Hapi = require("@hapi/hapi");
 const routes = require("./server/routes");
+const models = require("./models");
 
 const HOST = "localhost";
 const PORT = 3000;
@@ -32,8 +33,9 @@ const resolvers = {
 
 // Put together a schema
 const server = new ApolloServer({
-  typeDefs,
-  resolvers
+  typeDefs: gql(typeDefs),
+  resolvers,
+  context: { db: models }
 });
 
 const app = Hapi.server({
@@ -49,6 +51,7 @@ const init = async () => {
 
   app.route(routes);
 
+  await models.sequelize.sync();
   await app.start();
   console.log("Server running on %s", app.info.uri);
 };
