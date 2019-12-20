@@ -1,12 +1,45 @@
-export default `
+module.exports = `
+  type Address {
+    id: ID!
+    hash: String!,
+    alias: String,
+    degree: Int,
+    outdegree: Int,
+    scam: Boolean,
+    label: Label!
+  }
+  type Block {
+    id: ID!
+    miner: Int!,
+    timestamp: String,
+    rate: Float,
+    reward: Int,
+  }
+  type ContractTrans {
+    cid: String!,
+    bid: Int,
+    tid: Int,
+    i: Int,
+    type: Int,
+    to: Int,
+    amount: Float,
+  }
   type Label {
     id: ID!
-    label: String!
+    name: String
     color: String!
+    addresses: [Address!]!
   }
   type Query {
-    label: [Label!]!
-    label(id: ID!): Label
+    address(id: ID!): Address!
+    addresses: [Address!]!
+    label(id: ID!): Label!
+    labels: [Label!]!
+    block(id: ID!): Block!
+    blocks: [Block!]!
+    contract_transaction(id: ID!): ContractTrans!
+    contract_transactions: [ContractTrans!]!
+    
   }
 `;
 

@@ -1,13 +1,30 @@
-// const models = require("../models");
-
-export default {
-  Label: {
-    labels: (parent, args, context, info) => parent.getLabels()
+module.exports = {
+  /* Label: {
+    addresses: (parent, args, context, info) => parent.getAddresses()
   },
+  Address: {
+    label: (parent, args, context, info) => {
+      //
+      return parent.getLabel();
+    }
+  }, */
   Query: {
-    label: (parent, args, { db }, info) => db.label.findAll(),
-    labels: (parent, { id }, { db }, info) => db.label.findById(id)
+    label: (parent, { id }, { db }, info) => db.label.findByPk(id),
+    labels: (parent, args, { db }, info) => db.label.findAll(),
+    address: (parent, { id }, { db }, info) =>
+      db.address.findByPk(id, { include: db.label }),
+    addresses: (parent, args, { db }, info) => db.address.findAll(),
+    block: (parent, { id }, { db }, info) => db.block.findOne(id),
+    blocks: (parent, args, { db }, info) => db.block.findAll(),
+    contract_transaction: (parent, { id }, { db }, info) =>
+      db.contract_trans.findAll({
+        attributes: ["cid", "bid", "tid", "i", "type", "to", "amount"],
+        where: { i: id }
+      }),
+    contract_transactions: (parent, args, { db }, info) =>
+      db.contract_trans.findAll()
   }
+
   /* Mutation: {
         createPost: (parent, { title, content, authorId }, { db }, info) =>
             db.post.create({

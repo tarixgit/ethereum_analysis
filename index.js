@@ -1,41 +1,22 @@
 ("use strict");
-
+// import typeDefs from "./schema/schema";
+// import resolvers from "./resolvers/mainResolver";
 const { ApolloServer, gql } = require("apollo-server-hapi");
 const Hapi = require("@hapi/hapi");
 const routes = require("./server/routes");
 const models = require("./models");
+const typeDefs = require("./schema/schema");
+const resolvers = require("./resolvers/mainResolver");
 
 const HOST = "localhost";
 const PORT = 3000;
-
-// Some fake data
-const books = [
-  {
-    title: "Harry Potter and the Sorcerer's stone",
-    author: "J.K. Rowling"
-  },
-  {
-    title: "Jurassic Park",
-    author: "Michael Crichton"
-  }
-];
-
-// The GraphQL schema in string form
-const typeDefs = `
-  type Query { books: [Book] }
-  type Book { title: String, author: String }
-`;
-
-// The resolvers
-const resolvers = {
-  Query: { books: () => books }
-};
 
 // Put together a schema
 const server = new ApolloServer({
   typeDefs: gql(typeDefs),
   resolvers,
-  context: { db: models }
+  context: { db: models },
+  tracing: true
 });
 
 const app = Hapi.server({

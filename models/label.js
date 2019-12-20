@@ -1,14 +1,19 @@
-const sequelize = require("sequelize");
+"use strict";
 
-("use strict");
 module.exports = function(sequelize, DataTypes) {
-  var New = sequelize.define(
+  const label = sequelize.define(
     "label",
     {
-      label: DataTypes.STRING,
+      name: DataTypes.STRING,
       color: DataTypes.STRING
     },
-    {}
+    {
+      timestamps: false,
+      freezeTableName: true
+    }
   );
-  return New;
+  label.associate = models => {
+    label.belongsTo(models.address);
+  };
+  return label;
 };
