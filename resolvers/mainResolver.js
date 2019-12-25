@@ -12,7 +12,7 @@ module.exports = {
     label: (parent, { id }, { db }, info) => db.label.findByPk(id),
     labels: (parent, args, { db }, info) => db.label.findAll(),
     address: (parent, { id }, { db }, info) =>
-      db.address.findByPk(id, { include: db.label }),
+      db.address.findByPk(id, { include: [{ model: db.label }] }),
     addresses: (parent, args, { db }, info) => db.address.findAll(),
     block: (parent, { id }, { db }, info) => db.block.findOne(id),
     blocks: (parent, args, { db }, info) => db.block.findAll(),

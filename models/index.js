@@ -37,12 +37,13 @@ fs.readdirSync(__dirname)
     const model = sequelize.import(path.join(__dirname, file));
     db[model.name] = model;
   });
+// var model = sequelize['import'](path.join(__dirname, file));
 
-// Object.keys(db).forEach(modelName => {
-//   if ("associate" in db[modelName]) {
-//     db[modelName].associate(db);
-//   }
-// });
+Object.keys(db).forEach(modelName => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
+});
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;

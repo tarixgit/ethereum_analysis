@@ -13,7 +13,7 @@ module.exports = function(sequelize, DataTypes) {
     }
   );
   label.associate = models => {
-    label.belongsTo(models.address);
+    label.hasMany(models.address);
   };
   return label;
 };
