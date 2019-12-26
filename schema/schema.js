@@ -16,6 +16,7 @@ module.exports = `
     reward: Int,
   }
   type ContractTrans {
+    id: ID!,
     cid: String!,
     bid: Int,
     tid: Int,
