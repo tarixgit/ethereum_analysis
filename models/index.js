@@ -4,10 +4,22 @@ const fs = require("fs");
 const path = require("path");
 const Sequelize = require("sequelize");
 // const config = require("../config/config.json");
+/*
 const config = {
   db: {
     host: "192.168.10.68",
     port: "5432",
+    dbname: "ethereum",
+    user: "ether",
+    pass: "temp123"
+  }
+};
+*/
+
+const config = {
+  db: {
+    host: "127.0.0.1",
+    port: "2080",
     dbname: "ethereum",
     user: "ether",
     pass: "temp123"

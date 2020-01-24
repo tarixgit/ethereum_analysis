@@ -15,13 +15,21 @@ module.exports = `
     rate: Float,
     reward: Int,
   }
+   type Transaction {
+    id: ID!
+    bid: Int,
+    tid: Int,
+    fromAddress: Address!,
+    toAddress: Address!,
+    amount: Float,
+  }
   type ContractTrans {
     id: ID!,
     cid: String!,
     bid: Int,
     tid: Int,
     i: Int,
-    type: Int,
+    contractTransType: ContractTransType!,
     to: Int,
     amount: Float,
   }
@@ -31,16 +39,24 @@ module.exports = `
     color: String!
     addresses: [Address!]!
   }
+  type ContractTransType {
+    id: ID!
+    name: String
+    contractTrans: [ContractTrans!]!
+  }
   type Query {
     address(id: ID!): Address!
-    addresses: [Address!]!
+    addresses(limit: Int): [Address!]!
     label(id: ID!): Label!
-    labels: [Label!]!
+    labels(limit: Int): [Label!]!
     block(id: ID!): Block!
-    blocks: [Block!]!
-    contract_transaction(id: ID!): ContractTrans!
-    contract_transactions: [ContractTrans!]!
-    
+    blocks(limit: Int): [Block!]!
+    contractTransaction(id: ID!): ContractTrans!
+    contractTransactions(limit: Int): [ContractTrans!]!
+    contractTransType(id: ID!): ContractTransType!
+    contractTransTypes(limit: Int): [ContractTransType!]!
+    transaction(id: ID!): Transaction!
+    transactions(limit: Int): [Transaction!]!
   }
 `;
 

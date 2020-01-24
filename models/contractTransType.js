@@ -8,5 +8,8 @@ module.exports = function(sequelize, DataTypes) {
     },
     { timestamps: false, freezeTableName: true }
   );
+  contractTransType.associate = models => {
+    contractTransType.hasMany(models.contract_trans);
+  };
   return contractTransType;
 };

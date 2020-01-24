@@ -17,6 +17,7 @@ module.exports = function(sequelize, DataTypes) {
   );
   address.associate = models => {
     address.belongsTo(models.label);
+    address.hasMany(models.transaction);
   };
   return address;
 };
