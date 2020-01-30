@@ -9,7 +9,7 @@ const typeDefs = require("./schema/schema");
 const resolvers = require("./resolvers/mainResolver");
 
 const HOST = "localhost";
-const PORT = 3000;
+const PORT = 3001;
 
 // Put together a schema
 const server = new ApolloServer({

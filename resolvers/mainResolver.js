@@ -9,14 +9,11 @@ module.exports = {
     }
   }, */
   Query: {
-    label: (parent, { id }, { db }, info) =>
-      db.label.findByPk(id, { include: [{ model: db.address }] }),
+    label: (parent, { id }, { db }, info) => db.label.findByPk(id),
     labels: (parent, args, { db, limit: lim }, info) =>
       db.label.findAll({
-        include: [{ model: db.address }],
         limit: lim || 100
       }),
-
     address: (parent, { id }, { db }, info) =>
       db.address.findByPk(id, { include: [{ model: db.label }] }),
     addresses: (parent, args, { db, limit: lim }, info) =>
@@ -29,19 +26,11 @@ module.exports = {
     transaction: (parent, { id, limit: lim }, { db }, info) =>
       db.transaction.findByPk(id, {
         attributes: ["id", "bid", "tid", "from", "to"],
-        include: [
-          { model: db.address, as: "fromAddress" },
-          { model: db.address, as: "toAddress" }
-        ],
         limit: lim || 100
       }),
     transactions: (parent, args, { db, limit: lim }, info) =>
       db.transaction.findAll({
         attributes: ["id", "bid", "tid", "from", "to"],
-        include: [
-          { model: db.address, as: "fromAddress", foreignKey: "from" },
-          { model: db.address, as: "toAddress", foreignKey: "to" }
-        ],
         limit: lim || 100
       }),
 
@@ -65,6 +54,37 @@ module.exports = {
       db.contract_trans_type.findAll({
         limit: lim || 100,
         include: [{ model: db.contract_trans }]
+      })
+  },
+  Address: {
+    transactions: (address, args, { db }) =>
+      db.transaction.findAll({
+        where: {
+          [db.Op.or]: [{ from: address.id }, { to: address.id }]
+        }
+      }),
+    label: ({ labelId }, args, { db }) => db.label.findByPk(labelId)
+  },
+  Label: {
+    addresses: (label, args, { db }) =>
+      db.address.findAll({
+        where: {
+          labelId: label.id
+        }
+      })
+  },
+  Transaction: {
+    fromAddress: (transaction, args, { db }) =>
+      db.address.findAll({
+        where: {
+          id: transaction.from
+        }
+      }),
+    toAddress: (transaction, args, { db }) =>
+      db.address.findAll({
+        where: {
+          id: transaction.to
+        }
       })
   }
 

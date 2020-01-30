@@ -7,6 +7,7 @@ module.exports = `
     outdegree: Int,
     scam: Boolean,
     label: Label!
+    transactions: [Transaction!]!
   }
   type Block {
     id: ID!
@@ -61,6 +62,11 @@ module.exports = `
 `;
 
 /*
+
+schema {
+  query: Query
+}
+
 type Post {
     id: ID!
         title: String
