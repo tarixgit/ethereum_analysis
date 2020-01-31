@@ -8,6 +8,8 @@ module.exports = `
     scam: Boolean,
     label: Label!
     transactions: [Transaction!]!
+    transactionsOutput: [Transaction!]
+    transactionsInput: [Transaction!]
   }
   type Block {
     id: ID!
@@ -46,7 +48,7 @@ module.exports = `
     contractTrans: [ContractTrans!]!
   }
   type Query {
-    address(id: ID!): Address!
+    address(id: ID!, address: String): Address!
     addresses(limit: Int): [Address!]!
     label(id: ID!): Label!
     labels(limit: Int): [Label!]!
@@ -56,8 +58,8 @@ module.exports = `
     contractTransactions(limit: Int): [ContractTrans!]!
     contractTransType(id: ID!): ContractTransType!
     contractTransTypes(limit: Int): [ContractTransType!]!
-    transaction(id: ID!): Transaction!
-    transactions(limit: Int): [Transaction!]!
+    transaction(id: ID!, address: String, fromAddress: String, toAddress: String ): Transaction!
+    transactions(limit: Int, ids: ID, fromAddress: ID, toAddress: ID ): [Transaction!]!
   }
 `;
 

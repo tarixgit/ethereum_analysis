@@ -6,7 +6,7 @@ const Hapi = require("@hapi/hapi");
 const routes = require("./server/routes");
 const models = require("./models");
 const typeDefs = require("./schema/schema");
-const resolvers = require("./resolvers/mainResolver");
+const resolvers = require("./resolvers");
 
 const HOST = "localhost";
 const PORT = 3001;
