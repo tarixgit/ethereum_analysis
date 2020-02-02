@@ -1,30 +1,30 @@
 module.exports = {
   Query: {
     label: (parent, { id }, { db }, info) => db.label.findByPk(id),
-    labels: (parent, args, { db, limit: lim }, info) =>
+    labels: (parent, { limit: lim }, { db }, info) =>
       db.label.findAll({
         limit: lim || 100
       }),
+
     block: (parent, { id }, { db }, info) => db.block.findOne(id),
-    blocks: (parent, args, { db, limit: lim }, info) =>
+    blocks: (parent, { limit: lim }, { db }, info) =>
       db.block.findAll({ limit: lim || 100 }),
-    contractTransaction: (parent, { id, limit: lim }, { db }, info) =>
+
+    contractTransaction: (parent, { id }, { db }, info) =>
       db.contract_trans.findByPk(id, {
-        include: [{ model: db.contract_trans_type }],
-        limit: lim || 100
+        include: [{ model: db.contract_trans_type }]
       }),
-    contractTransactions: (parent, args, { db, limit: lim }, info) =>
+    contractTransactions: (parent, { limit: lim }, { db }, info) =>
       db.contract_trans.findAll({
         limit: lim || 100,
         include: [{ model: db.contract_trans_type }]
       }),
 
-    contractTransType: (parent, { id, limit: lim }, { db }, info) =>
+    contractTransType: (parent, { id }, { db }, info) =>
       db.contract_trans_type.findByPk(id, {
-        include: [{ model: db.contract_trans }],
-        limit: lim || 100
+        include: [{ model: db.contract_trans }]
       }),
-    contractTransTypes: (parent, args, { db, limit: lim }, info) =>
+    contractTransTypes: (parent, { limit: lim }, { db }, info) =>
       db.contract_trans_type.findAll({
         limit: lim || 100,
         include: [{ model: db.contract_trans }]

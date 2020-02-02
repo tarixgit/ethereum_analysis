@@ -7,9 +7,9 @@ module.exports = `
     outdegree: Int,
     scam: Boolean,
     label: Label!
-    transactions: [Transaction!]!
-    transactionsOutput: [Transaction!]
-    transactionsInput: [Transaction!]
+    transactions: [Transaction]
+    transactionsOutput: [Transaction]
+    transactionsInput: [Transaction]
   }
   type Block {
     id: ID!
@@ -48,8 +48,8 @@ module.exports = `
     contractTrans: [ContractTrans!]!
   }
   type Query {
-    address(id: ID!, address: String): Address!
-    addresses(limit: Int): [Address!]!
+    address(id: ID!): Address!
+    addresses(limit: Int, address: String): [Address!]!
     label(id: ID!): Label!
     labels(limit: Int): [Label!]!
     block(id: ID!): Block!
