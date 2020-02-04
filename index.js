@@ -8,6 +8,7 @@ const models = require("./models");
 const typeDefs = require("./schema/schema");
 const resolvers = require("./resolvers");
 
+// TODO remove this on prod
 const HOST = "localhost";
 const PORT = 3001;
 
