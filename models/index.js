@@ -3,6 +3,13 @@
 const fs = require("fs");
 const path = require("path");
 const Sequelize = require("sequelize");
+const dotenv = require("dotenv");
+const result = dotenv.config();
+
+if (result.error) {
+  throw result.error;
+}
+
 // const config = require("../config/config.json");
 /*
 const config = {
@@ -18,17 +25,17 @@ const config = {
 
 const config = {
   db: {
-    host: "127.0.0.1",
-    port: "2080",
-    dbname: "ethereum",
-    user: "ether",
-    pass: "temp123"
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    dbname: process.env.DB_DBNAME,
+    user: process.env.DB_USER,
+    pass: process.env.DB_PASS
   }
 };
 const {
   db: { dbname, user, pass, host, port }
 } = config;
-// TODO use dotenv
+
 const sequelize = new Sequelize(dbname, user, pass, {
   host: host,
   port: port,

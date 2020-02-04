@@ -7,8 +7,16 @@ const routes = require("./server/routes");
 const models = require("./models");
 const typeDefs = require("./schema/schema");
 const resolvers = require("./resolvers");
+const dotenv = require("dotenv");
+const result = dotenv.config();
 
-const PORT = 5001;
+if (result.error) {
+  throw result.error;
+}
+
+console.log(result.parsed);
+
+const PORT = process.env.PORT;
 
 // Put together a schema
 const server = new ApolloServer({
