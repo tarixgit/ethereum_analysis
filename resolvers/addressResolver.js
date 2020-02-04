@@ -1,7 +1,6 @@
 module.exports = {
   Query: {
-    address: (parent, { id }, { db }, info) =>
-      db.address.findByPk(id, { include: [{ model: db.label }] }),
+    address: (parent, { id }, { db }, info) => db.address.findByPk(id),
     addresses: (parent, { address, limit: lim }, { db }, info) =>
       db.address.findAll({
         where: { hash: address },
