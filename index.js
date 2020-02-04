@@ -8,9 +8,7 @@ const models = require("./models");
 const typeDefs = require("./schema/schema");
 const resolvers = require("./resolvers");
 
-// TODO remove this on prod
-const HOST = "localhost";
-const PORT = 3001;
+const PORT = 5001;
 
 // Put together a schema
 const server = new ApolloServer({
@@ -24,7 +22,7 @@ const server = new ApolloServer({
 });
 
 const app = Hapi.server({
-  host: HOST,
+  // host: HOST,
   port: PORT
 });
 
