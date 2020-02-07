@@ -4,8 +4,8 @@
   "description": "masterarbeit 2019",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "start-prod": "NODE_ENV=production node index.js",
+    "start": "node --max-old-space-size=2048 index.js",
+    "start-prod": "NODE_ENV=production node --max-old-space-size=4096 index.js",
     "lint": "eslint src --color",
     "build": "babel src --out-dir dist --ignore node_modules",
     "p": "prettier --write 'src/**/*.js'",
