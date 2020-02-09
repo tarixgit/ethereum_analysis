@@ -1,4 +1,4 @@
-const { filter, flatMap, map } = require("lodash");
+const { filter, flatMap, map, differenceBy } = require("lodash");
 const rp = require("request-promise");
 
 const options = {
@@ -16,16 +16,16 @@ module.exports = {
     //   if (user) return Buffer.from(email).toString("base64");
     // } findOrCreate
     loadData: async (parent, data, { db }, info) => {
-      const t = await db.sequelize.transaction();
       try {
         const results = await rp(options);
 
         if (results.success) {
-          const addresses = filter(
+          // preapare data
+          const resultFiltered = filter(
             results.result,
             ({ addresses, coin }) => !!addresses && coin === "ETH"
           );
-          const importAddresses = flatMap(addresses, item => {
+          let importAddresses = flatMap(resultFiltered, item => {
             const {
               addresses,
               name,
@@ -48,19 +48,17 @@ module.exports = {
             }));
           });
 
-          // TODO too slow 1.2 min
-          // bulkCreate was ca. 2 sec.
-          // findALL bulkcreate
-          await Promise.all(
-            map(importAddresses, item =>
-              db.import_address.findOrCreate({
-                where: { hash: item.hash },
-                defaults: item,
-                transaction: t
-              })
-            )
+          const addressesFromDB = await db.import_address.findAll({
+            where: { hash: map(importAddresses, "hash") }
+          });
+          importAddresses = differenceBy(
+            importAddresses,
+            addressesFromDB,
+            "hash"
           );
-          await t.commit();
+          if (importAddresses.length) {
+            await db.import_address.bulkCreate(importAddresses);
+          }
         }
         return {
           success: !!results,
@@ -68,7 +66,6 @@ module.exports = {
         };
       } catch (err) {
         console.log(err);
-        await t.rollback();
         return {
           success: !err,
           message: "error"
