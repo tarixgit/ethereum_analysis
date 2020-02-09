@@ -61,6 +61,14 @@ module.exports = `
     transaction(id: ID!, address: String, fromAddress: String, toAddress: String ): Transaction!
     transactions(limit: Int, ids: ID, fromAddress: ID, toAddress: ID ): [Transaction!]!
   }
+  type Mutation {
+    loadData: GeneralResponse!
+    login(email: String): String # login token
+  }
+  type GeneralResponse {
+      success: Boolean!
+      message: String
+  }
 `;
 
 /*

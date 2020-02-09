@@ -12,7 +12,7 @@ module.exports = {
       db.transaction.findAll({
         attributes: ["id", "bid", "tid", "from", "to", "amount"],
         where: {
-          [db.Op.or]: [{ from: address.id }, { to: address.id }]
+          $or: [{ from: address.id }, { to: address.id }]
         }
       }),
     transactionsOutput: (address, args, { db }) =>
