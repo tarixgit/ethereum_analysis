@@ -16,8 +16,10 @@ module.exports = {
     //   if (user) return Buffer.from(email).toString("base64");
     // } findOrCreate
     loadData: async (parent, data, { db }, info) => {
+      const t = await db.sequelize.transaction();
       try {
         const results = await rp(options);
+
         if (results.success) {
           const addresses = filter(
             results.result,
@@ -45,15 +47,28 @@ module.exports = {
               status
             }));
           });
-          await db.import_address.bulkCreate(importAddresses);
-        }
 
+          // TODO too slow 1.2 min
+          // bulkCreate was ca. 2 sec.
+          // findALL bulkcreate
+          await Promise.all(
+            map(importAddresses, item =>
+              db.import_address.findOrCreate({
+                where: { hash: item.hash },
+                defaults: item,
+                transaction: t
+              })
+            )
+          );
+          await t.commit();
+        }
         return {
           success: !!results,
           message: "success"
         };
       } catch (err) {
         console.log(err);
+        await t.rollback();
         return {
           success: !err,
           message: "error"
