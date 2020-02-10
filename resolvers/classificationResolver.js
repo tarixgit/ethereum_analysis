@@ -1,3 +1,5 @@
+import { uniqBy } from "lodash";
+
 const { filter, flatMap, map, differenceBy } = require("lodash");
 const rp = require("request-promise");
 
@@ -56,6 +58,7 @@ module.exports = {
             addressesFromDB,
             "hash"
           );
+          importAddresses = uniqBy(importAddresses, "hash");
           if (importAddresses.length) {
             await db.import_address.bulkCreate(importAddresses);
           }
