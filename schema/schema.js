@@ -47,6 +47,17 @@ module.exports = `
     name: String
     contractTrans: [ContractTrans!]!
   }
+  type ImportAddress {
+      id: ID!
+      hash: String,
+      name: String,
+      url: String,
+      coin: String,
+      category: String,
+      subcategory: String,
+      reporter: String,
+      status: String
+  }
   type Query {
     address(id: ID!): Address!
     addresses(limit: Int, address: String): [Address!]!
@@ -60,6 +71,8 @@ module.exports = `
     contractTransTypes(limit: Int): [ContractTransType!]!
     transaction(id: ID!, address: String, fromAddress: String, toAddress: String ): Transaction!
     transactions(limit: Int, ids: ID, fromAddress: ID, toAddress: ID ): [Transaction!]!
+    importAddress(id: ID!): ImportAddress!
+    importAddresses(limit: Int, ids: [ID], addresses: [String]): [ImportAddress!]!
   }
   type Mutation {
     loadData: GeneralResponse!
