@@ -1,6 +1,4 @@
-import { uniqBy } from "lodash";
-
-const { filter, flatMap, map, differenceBy } = require("lodash");
+const { filter, flatMap, map, differenceBy, uniqBy } = require("lodash");
 const rp = require("request-promise");
 
 const options = {
@@ -22,7 +20,7 @@ module.exports = {
         const results = await rp(options);
 
         if (results.success) {
-          // preapare data
+          // prepare data
           const resultFiltered = filter(
             results.result,
             ({ addresses, coin }) => !!addresses && coin === "ETH"

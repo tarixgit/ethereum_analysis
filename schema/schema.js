@@ -5,6 +5,7 @@ module.exports = `
     alias: String,
     degree: Int,
     outdegree: Int,
+    labelId: Int,
     scam: Boolean,
     label: Label!
     transactions: [Transaction]
