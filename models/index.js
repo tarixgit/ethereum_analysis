@@ -41,9 +41,9 @@ const sequelize = new Sequelize(dbname, user, pass, {
   port: port,
   dialect: "postgres",
   pool: {
-    max: 5,
+    max: 5, // TODO increase?
     min: 0,
-    acquire: 30000,
+    acquire: 60000, //  TODO configure this to timeout for postgrss
     idle: 10000
   }
 });

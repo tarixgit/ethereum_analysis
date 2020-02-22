@@ -11,6 +11,7 @@ module.exports = {
       info
     ) => {
       const whereOr = [];
+      // TODO keyed Obj map
       if (addresses) {
         whereOr.push({ hash: addresses });
       }

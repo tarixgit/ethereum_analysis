@@ -59,6 +59,24 @@ module.exports = `
       reporter: String,
       status: String
   }
+  type AddressFeature {
+      id: ID!,
+      hash: String,
+      scam: Boolean,
+      numberOfNone: Int,
+      numberOfOneTime: Int,
+      numberOfExchange: Int,
+      numberOfMiningPool: Int,
+      numberOfMiner: Int,
+      numberOfSmContract: Int,
+      numberOfERC20: Int,
+      numberOfERC721: Int,
+      numberOfTrace: Int,
+      numberOfTransaction: Int,
+      meanOfEthProTrans: Float,
+      averageOfEthProTrans: Float,
+  }
+  
   type Query {
     address(id: ID!): Address!
     addresses(limit: Int, address: String): [Address!]!
@@ -74,9 +92,11 @@ module.exports = `
     transactions(limit: Int, ids: ID, fromAddress: ID, toAddress: ID ): [Transaction!]!
     importAddress(id: ID!): ImportAddress!
     importAddresses(limit: Int, ids: [ID], addresses: [String]): [ImportAddress!]!
+    addressFeatures(limit: Int, ids: [ID], addresses: [String]): [AddressFeature!]!
   }
   type Mutation {
     loadData: GeneralResponse!
+    buildFeatures: GeneralResponse!
     login(email: String): String # login token
   }
   type GeneralResponse {

@@ -19,6 +19,7 @@ console.log(result.parsed);
 const PORT = process.env.PORT;
 
 // Put together a schema
+//  TODO output the errors from Apollo Server
 const server = new ApolloServer({
   typeDefs: gql(typeDefs),
   resolvers,
@@ -26,7 +27,7 @@ const server = new ApolloServer({
   // origin: {
   //   requestTimeout: "50s"
   // }
-  tracing: true
+  tracing: !!process.env.PROD
 });
 
 const app = Hapi.server({
