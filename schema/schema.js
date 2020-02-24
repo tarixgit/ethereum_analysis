@@ -73,8 +73,9 @@ module.exports = `
       numberOfERC721: Int,
       numberOfTrace: Int,
       numberOfTransaction: Int,
-      meanOfEthProTrans: Float,
+      medianOfEthProTrans: Float,
       averageOfEthProTrans: Float,
+      addresses: Address!
   }
   
   type Query {

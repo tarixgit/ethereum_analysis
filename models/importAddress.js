@@ -11,7 +11,8 @@ module.exports = function(sequelize, DataTypes) {
       category: DataTypes.STRING,
       subcategory: DataTypes.STRING,
       reporter: DataTypes.STRING,
-      status: DataTypes.STRING
+      status: DataTypes.STRING,
+      scam: { type: DataTypes.BOOLEAN, defaultValue: true }
     },
     {
       timestamps: false, // TODO change this

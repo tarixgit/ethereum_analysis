@@ -93,71 +93,37 @@ module.exports = {
       }
     },
     buildFeatures: async (parent, data, { db }, info) => {
-      const scamAddresses = await db.import_address.findAll({
-        attributes: ["id", "hash"],
+      const importAddresses = await db.import_address.findAll({
+        attributes: ["id", "hash", "scam"],
         raw: true
       });
       const addressesAlreadyInDB = await db.address_feature.findAll({
-        where: { hash: map(scamAddresses, "hash") } // not perfect but must be fast
+        where: { hash: map(importAddresses, "hash") } // not perfect but must be fast
       });
-      const hashes = map(
-        differenceBy(scamAddresses, addressesAlreadyInDB, "hash"),
+      const importAddressesNotInDB = differenceBy(
+        importAddresses,
+        addressesAlreadyInDB,
         "hash"
       );
-      const addresses = await db.address.findAll({
-        attributes: ["id", "hash"],
-        where: { hash: hashes },
-        raw: true
-      });
-      const ids = map(addresses, "id");
-      let transactionsInputs = await db.transaction.findAll({
-        attributes: ["id", "bid", "tid", "from", "to", "amount"],
-        where: {
-          to: ids
-        },
-        raw: true
-      });
-      const inputNeighborIds = map(transactionsInputs, "from");
-      const inputNeighbors = await db.address.findAll({
-        attributes: ["id", "labelId"],
-        where: { id: inputNeighborIds },
-        raw: true
-      });
-      const inputNeighborsKeyed = keyBy(inputNeighbors, "id");
-      transactionsInputs = map(transactionsInputs, item => {
-        item.fromAddress = inputNeighborsKeyed[item.from];
-        return item;
-      });
+      const importScamAddressesNotInDB = filter(importAddressesNotInDB, "scam");
+      const importNotlAddressesNotInDB = filter(
+        importAddressesNotInDB,
+        item => !item.scam
+      );
 
-      let transactionsOutputs = await db.transaction.findAll({
-        attributes: ["id", "bid", "tid", "from", "to", "amount"],
-        where: {
-          from: ids
-        },
-        raw: true
-      });
-      const outputNeighborIds = map(transactionsOutputs, "to");
-      const outputNeighbors = await db.address.findAll({
-        attributes: ["id", "labelId"],
-        where: { id: outputNeighborIds },
-        raw: true
-      });
-      const outputNeighborsKeyed = keyBy(outputNeighbors, "id");
-      transactionsOutputs = map(transactionsOutputs, item => {
-        item.toAddress = outputNeighborsKeyed[item.to];
-        return item;
-      });
-      const transactionsInputsKeyed = groupBy(transactionsInputs, "to");
-      const transactionsOutputsKeyed = groupBy(transactionsOutputs, "from");
-      const fullAddresses = map(addresses, ({ id, hash }) => ({
-        id,
-        hash,
-        transactionsInput: transactionsInputsKeyed[id],
-        transactionsOutput: transactionsOutputsKeyed[id]
-      }));
-
-      const addressFeatures = map(fullAddresses, address =>
-        getFeatureSet(address)
+      const scamAddressFeatures = await buildFeatureForAdresses(
+        db,
+        importScamAddressesNotInDB,
+        true
+      );
+      const normalAddressFeatures = await buildFeatureForAdresses(
+        db,
+        importNotlAddressesNotInDB,
+        false
+      );
+      const addressFeatures = concat(
+        scamAddressFeatures,
+        normalAddressFeatures
       );
       if (addressFeatures.length) {
         await db.address_feature.bulkCreate(addressFeatures);
@@ -168,6 +134,66 @@ module.exports = {
       };
     }
   }
+};
+
+const buildFeatureForAdresses = async (db, importAddresses, isScam) => {
+  const hashes = map(importAddresses, "hash");
+  const addresses = await db.address.findAll({
+    attributes: ["id", "hash"],
+    where: { hash: hashes },
+    raw: true
+  });
+  const ids = map(addresses, "id");
+  let transactionsInputs = await db.transaction.findAll({
+    attributes: ["id", "bid", "tid", "from", "to", "amount"],
+    where: {
+      to: ids
+    },
+    raw: true
+  });
+  const inputNeighborIds = map(transactionsInputs, "from");
+  const inputNeighbors = await db.address.findAll({
+    attributes: ["id", "labelId"],
+    where: { id: inputNeighborIds },
+    raw: true
+  });
+  const inputNeighborsKeyed = keyBy(inputNeighbors, "id");
+  transactionsInputs = map(transactionsInputs, item => {
+    item.fromAddress = inputNeighborsKeyed[item.from];
+    return item;
+  });
+
+  let transactionsOutputs = await db.transaction.findAll({
+    attributes: ["id", "bid", "tid", "from", "to", "amount"],
+    where: {
+      from: ids
+    },
+    raw: true
+  });
+  const outputNeighborIds = map(transactionsOutputs, "to");
+  const outputNeighbors = await db.address.findAll({
+    attributes: ["id", "labelId"],
+    where: { id: outputNeighborIds },
+    raw: true
+  });
+  const outputNeighborsKeyed = keyBy(outputNeighbors, "id");
+  transactionsOutputs = map(transactionsOutputs, item => {
+    item.toAddress = outputNeighborsKeyed[item.to];
+    return item;
+  });
+  const transactionsInputsKeyed = groupBy(transactionsInputs, "to");
+  const transactionsOutputsKeyed = groupBy(transactionsOutputs, "from");
+  const fullAddresses = map(addresses, ({ id, hash }) => ({
+    id,
+    hash,
+    transactionsInput: transactionsInputsKeyed[id],
+    transactionsOutput: transactionsOutputsKeyed[id]
+  }));
+
+  const addressFeatures = map(fullAddresses, address =>
+    getFeatureSet(address, isScam)
+  );
+  return addressFeatures;
 };
 
 /**
@@ -182,14 +208,20 @@ module.exports = {
  * 4 - Trace,
  * 9 - Genesis
  * **/
-const getFeatureSet = ({ id, hash, transactionsInput, transactionsOutput }) => {
+const getFeatureSet = ({
+  id,
+  hash,
+  transactionsInput,
+  transactionsOutput,
+  isScam
+}) => {
   const inputCounters = countBy(transactionsInput, "fromAddress.labelId");
   const outputCounters = countBy(transactionsOutput, "toAddress.labelId");
   const fullArr = compact(concat(transactionsInput, transactionsOutput));
   return {
     hash,
     addressId: id,
-    scam: true,
+    scam: isScam,
     numberOfNone: inputCounters[0] || 0 + outputCounters[0] || 0,
     numberOfOneTime: inputCounters[3] || 0 + outputCounters[3] || 0,
     numberOfExchange: inputCounters[6] || 0 + outputCounters[6] || 0,
