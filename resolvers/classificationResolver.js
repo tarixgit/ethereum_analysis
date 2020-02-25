@@ -208,13 +208,10 @@ const buildFeatureForAdresses = async (db, importAddresses, isScam) => {
  * 4 - Trace,
  * 9 - Genesis
  * **/
-const getFeatureSet = ({
-  id,
-  hash,
-  transactionsInput,
-  transactionsOutput,
+const getFeatureSet = (
+  { id, hash, transactionsInput, transactionsOutput },
   isScam
-}) => {
+) => {
   const inputCounters = countBy(transactionsInput, "fromAddress.labelId");
   const outputCounters = countBy(transactionsOutput, "toAddress.labelId");
   const fullArr = compact(concat(transactionsInput, transactionsOutput));
