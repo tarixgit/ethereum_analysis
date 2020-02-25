@@ -19,7 +19,7 @@ module.exports = {
       return db.address_feature.findAndCountAll({
         where: whereOr.length ? { [Op.or]: [...whereOr] } : null,
         offset,
-        limit: lim || 100
+        limit: lim
       });
     }
   }
