@@ -2,10 +2,7 @@ const { Op } = require("sequelize");
 
 module.exports = {
   Query: {
-    importAddress: (parent, { id }, { db }, info) =>
-      db.import_address.findByPk(id),
-
-    importAddresses: (
+    addressFeatures: (
       parent,
       { addresses = null, limit: lim, offset, ids = null },
       { db },
@@ -19,7 +16,7 @@ module.exports = {
       if (ids) {
         whereOr.push({ id: ids });
       }
-      return db.import_address.findAndCountAll({
+      return db.address_feature.findAndCountAll({
         where: whereOr.length ? { [Op.or]: [...whereOr] } : null,
         offset,
         limit: lim || 100

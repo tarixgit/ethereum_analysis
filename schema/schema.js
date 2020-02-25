@@ -78,6 +78,15 @@ module.exports = `
       addresses: Address!
   }
   
+  type ImportAddressesWCount {
+    rows: [ImportAddress!]!
+    count: Int
+  } 
+   type AddressFeaturesWCount {
+    rows: [AddressFeature!]!
+    count: Int
+  }
+   
   type Query {
     address(id: ID!): Address!
     addresses(limit: Int, address: String): [Address!]!
@@ -92,8 +101,8 @@ module.exports = `
     transaction(id: ID!, address: String, fromAddress: String, toAddress: String ): Transaction!
     transactions(limit: Int, ids: ID, fromAddress: ID, toAddress: ID ): [Transaction!]!
     importAddress(id: ID!): ImportAddress!
-    importAddresses(limit: Int, ids: [ID], addresses: [String]): [ImportAddress!]!
-    addressFeatures(limit: Int, ids: [ID], addresses: [String]): [AddressFeature!]!
+    importAddresses(offset: Int, limit: Int, ids: [ID], addresses: [String]): ImportAddressesWCount!
+    addressFeatures(offset: Int, limit: Int, ids: [ID], addresses: [String]): AddressFeaturesWCount!
   }
   type Mutation {
     loadData: GeneralResponse!
