@@ -16,7 +16,10 @@ module.exports = function(sequelize, DataTypes) {
       numberOfERC721: DataTypes.INTEGER,
       numberOfTrace: DataTypes.INTEGER,
       medianOfEthProTrans: DataTypes.DOUBLE,
-      averageOfEthProTrans: DataTypes.DOUBLE
+      averageOfEthProTrans: DataTypes.DOUBLE,
+      numberOfTransactions: DataTypes.INTEGER,
+      numberOfTransInput: DataTypes.INTEGER,
+      numberOfTransOutput: DataTypes.INTEGER
     },
     {
       timestamps: false,

@@ -107,6 +107,7 @@ module.exports = `
   type Mutation {
     loadData: GeneralResponse!
     buildFeatures: GeneralResponse!
+    recalcFeatures: GeneralResponse!
     login(email: String): String # login token
   }
   type GeneralResponse {

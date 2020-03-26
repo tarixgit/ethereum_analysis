@@ -1,12 +1,15 @@
 const {
   countBy,
   filter,
+  forEach,
   flatMap,
   map,
   differenceBy,
+  uniq,
   uniqBy,
   groupBy,
   keyBy,
+  slice,
   sortBy,
   meanBy,
   concat,
@@ -93,40 +96,80 @@ module.exports = {
       }
     },
     buildFeatures: async (parent, data, { db }, info) => {
-      const importAddresses = await db.import_address.findAll({
-        attributes: ["id", "hash", "scam"],
-        raw: true
-      });
-      const addressesAlreadyInDB = await db.address_feature.findAll({
-        where: { hash: map(importAddresses, "hash") } // not perfect but must be fast
-      });
-      const importAddressesNotInDB = differenceBy(
-        importAddresses,
-        addressesAlreadyInDB,
-        "hash"
-      );
-      const importScamAddressesNotInDB = filter(importAddressesNotInDB, "scam");
-      const importNotlAddressesNotInDB = filter(
-        importAddressesNotInDB,
-        item => !item.scam
-      );
+      try {
+        const importAddresses = await db.import_address.findAll({
+          attributes: ["id", "hash", "scam"],
+          raw: true
+        });
+        const addressesAlreadyInDB = await db.address_feature.findAll({
+          where: { hash: map(importAddresses, "hash") } // not perfect but must be fast
+        });
+        const importAddressesNotInDB = differenceBy(
+          importAddresses,
+          addressesAlreadyInDB,
+          "hash"
+        );
+        const importScamAddressesNotInDB = filter(
+          importAddressesNotInDB,
+          "scam"
+        );
+        const importWhiteAddressesNotInDB = filter(
+          importAddressesNotInDB,
+          item => !item.scam
+        );
 
-      const scamAddressFeatures = await buildFeatureForAdresses(
+        const scamAddressFeatures = await buildFeatureForAdresses(
+          db,
+          importScamAddressesNotInDB,
+          true
+        );
+        // TODO some of Adresses have a ca 500 000 - 1 000 000 Transaction wo we can't import of all
+        // TODO make posible to set this parameter on frontend and also which type of Adresses you want to import
+        const tempArr = slice(importWhiteAddressesNotInDB, 140, 160);
+        const normalAddressFeatures = await buildFeatureForAdresses(
+          db,
+          tempArr,
+          false
+        );
+        const addressFeatures = concat(
+          scamAddressFeatures,
+          normalAddressFeatures
+        );
+        if (addressFeatures.length) {
+          await db.address_feature.bulkCreate(addressFeatures);
+        }
+        return {
+          success: !!addressFeatures,
+          message: `Success`
+        };
+      } catch (e) {
+        console.log(e);
+      }
+    },
+    recalcFeatures: async (parent, data, { db }, info) => {
+      let addresses = await db.address_feature.findAll();
+      addresses = filter(addresses, ({ id }) => id < 5202 && id > 5186);
+      const scamAddresses = filter(addresses, "scam");
+      const whiteAddresses = filter(addresses, item => !item.scam);
+
+      // TODO to speedup use addresses ids in this sub-func
+      const scamAddressFeatures = await updateFeatureForAdresses(
         db,
-        importScamAddressesNotInDB,
+        scamAddresses,
         true
       );
-      const normalAddressFeatures = await buildFeatureForAdresses(
+      const normalAddressFeatures = await updateFeatureForAdresses(
         db,
-        importNotlAddressesNotInDB,
+        whiteAddresses,
         false
       );
       const addressFeatures = concat(
         scamAddressFeatures,
         normalAddressFeatures
       );
+      // TODO hack how to update, every must be single query
       if (addressFeatures.length) {
-        await db.address_feature.bulkCreate(addressFeatures);
+        forEach(addressFeatures, address => address.save());
       }
       return {
         success: !!addressFeatures,
@@ -143,7 +186,7 @@ const buildFeatureForAdresses = async (db, importAddresses, isScam) => {
     where: { hash: hashes },
     raw: true
   });
-  const ids = map(addresses, "id");
+  const ids = uniq(map(addresses, "id"));
   let transactionsInputs = await db.transaction.findAll({
     attributes: ["id", "bid", "tid", "from", "to", "amount"],
     where: {
@@ -151,7 +194,7 @@ const buildFeatureForAdresses = async (db, importAddresses, isScam) => {
     },
     raw: true
   });
-  const inputNeighborIds = map(transactionsInputs, "from");
+  const inputNeighborIds = uniq(map(transactionsInputs, "from"));
   const inputNeighbors = await db.address.findAll({
     attributes: ["id", "labelId"],
     where: { id: inputNeighborIds },
@@ -170,7 +213,7 @@ const buildFeatureForAdresses = async (db, importAddresses, isScam) => {
     },
     raw: true
   });
-  const outputNeighborIds = map(transactionsOutputs, "to");
+  const outputNeighborIds = uniq(map(transactionsOutputs, "to"));
   const outputNeighbors = await db.address.findAll({
     attributes: ["id", "labelId"],
     where: { id: outputNeighborIds },
@@ -186,8 +229,8 @@ const buildFeatureForAdresses = async (db, importAddresses, isScam) => {
   const fullAddresses = map(addresses, ({ id, hash }) => ({
     id,
     hash,
-    transactionsInput: transactionsInputsKeyed[id],
-    transactionsOutput: transactionsOutputsKeyed[id]
+    transactionsInput: transactionsInputsKeyed[id] || [],
+    transactionsOutput: transactionsOutputsKeyed[id] || []
   }));
 
   const addressFeatures = map(fullAddresses, address =>
@@ -195,6 +238,59 @@ const buildFeatureForAdresses = async (db, importAddresses, isScam) => {
   );
   return addressFeatures;
 };
+
+const updateFeatureForAdresses = async (db, addresses) => {
+  const ids = uniq(map(addresses, "addressId"));
+  let transactionsInputs = await db.transaction.findAll({
+    attributes: ["id", "bid", "tid", "from", "to", "amount"],
+    where: {
+      to: ids
+    },
+    raw: true
+  });
+  const inputNeighborIds = uniq(map(transactionsInputs, "from"));
+  const inputNeighbors = await db.address.findAll({
+    attributes: ["id", "labelId"],
+    where: { id: inputNeighborIds },
+    raw: true
+  });
+  const inputNeighborsKeyed = keyBy(inputNeighbors, "id");
+  transactionsInputs = map(transactionsInputs, item => {
+    item.fromAddress = inputNeighborsKeyed[item.from];
+    return item;
+  });
+
+  let transactionsOutputs = await db.transaction.findAll({
+    attributes: ["id", "bid", "tid", "from", "to", "amount"],
+    where: {
+      from: ids
+    },
+    raw: true
+  });
+  const outputNeighborIds = uniq(map(transactionsOutputs, "to"));
+  const outputNeighbors = await db.address.findAll({
+    attributes: ["id", "labelId"],
+    where: { id: outputNeighborIds },
+    raw: true
+  });
+  const outputNeighborsKeyed = keyBy(outputNeighbors, "id");
+  transactionsOutputs = map(transactionsOutputs, item => {
+    item.toAddress = outputNeighborsKeyed[item.to];
+    return item;
+  });
+  const transactionsInputsKeyed = groupBy(transactionsInputs, "to");
+  const transactionsOutputsKeyed = groupBy(transactionsOutputs, "from");
+  const addressFeaturesUpdated = map(addresses, add => {
+    const transactionsInput = transactionsInputsKeyed[add.addressId] || [];
+    const transactionsOutput = transactionsOutputsKeyed[add.addressId] || [];
+    return getFeatureSetUpdate(add, transactionsInput, transactionsOutput);
+  });
+
+  return addressFeaturesUpdated;
+};
+
+const getCounters = (inputCounters, outputCounters, index) =>
+  inputCounters[index] || 0 + outputCounters[index] || 0;
 
 /**
  * 0 - none,
@@ -215,22 +311,184 @@ const getFeatureSet = (
   const inputCounters = countBy(transactionsInput, "fromAddress.labelId");
   const outputCounters = countBy(transactionsOutput, "toAddress.labelId");
   const fullArr = compact(concat(transactionsInput, transactionsOutput));
+  const countOfAllTransaction = fullArr.length;
+  const countOfTransInput = !transactionsInput.length
+    ? 0
+    : transactionsInput.length;
+  const countOfTransOutput = !transactionsOutput.length
+    ? 0
+    : transactionsOutput.length;
+  if (!countOfAllTransaction) {
+    return {
+      hash,
+      addressId: id,
+      scam: isScam,
+      numberOfNone: 0,
+      numberOfOneTime: 0,
+      numberOfExchange: 0,
+      numberOfMiningPool: 0,
+      numberOfMiner: 0,
+      numberOfSmContract: 0,
+      numberOfERC20: 0,
+      numberOfERC721: 0,
+      numberOfTrace: 0,
+      medianOfEthProTrans: 0,
+      averageOfEthProTrans: 0,
+      numberOfTransInput: 0,
+      numberOfTransOutput: 0,
+      numberOfTransactions: 0
+    };
+  }
   return {
     hash,
     addressId: id,
     scam: isScam,
-    numberOfNone: inputCounters[0] || 0 + outputCounters[0] || 0,
-    numberOfOneTime: inputCounters[3] || 0 + outputCounters[3] || 0,
-    numberOfExchange: inputCounters[6] || 0 + outputCounters[6] || 0,
-    numberOfMiningPool: inputCounters[1] || 0 + outputCounters[1] || 0,
-    numberOfMiner: inputCounters[5] || 0 + outputCounters[5] || 0,
-    numberOfSmContract: inputCounters[2] || 0 + outputCounters[2] || 0,
-    numberOfERC20: inputCounters[7] || 0 + outputCounters[7] || 0,
-    numberOfERC721: inputCounters[8] || 0 + outputCounters[8] || 0,
-    numberOfTrace: inputCounters[4] || 0 + outputCounters[4] || 0,
+    numberOfNone: getCounters(
+      inputCounters,
+      outputCounters,
+      0,
+      countOfAllTransaction
+    ),
+    numberOfOneTime: getCounters(
+      inputCounters,
+      outputCounters,
+      3,
+      countOfAllTransaction
+    ),
+    numberOfExchange: getCounters(
+      inputCounters,
+      outputCounters,
+      6,
+      countOfAllTransaction
+    ),
+    numberOfMiningPool: getCounters(
+      inputCounters,
+      outputCounters,
+      1,
+      countOfAllTransaction
+    ),
+    numberOfMiner: getCounters(
+      inputCounters,
+      outputCounters,
+      5,
+      countOfAllTransaction
+    ),
+    numberOfSmContract: getCounters(
+      inputCounters,
+      outputCounters,
+      2,
+      countOfAllTransaction
+    ),
+    numberOfERC20: getCounters(
+      inputCounters,
+      outputCounters,
+      7,
+      countOfAllTransaction
+    ),
+    numberOfERC721: getCounters(
+      inputCounters,
+      outputCounters,
+      8,
+      countOfAllTransaction
+    ),
+    numberOfTrace: getCounters(
+      inputCounters,
+      outputCounters,
+      4,
+      countOfAllTransaction
+    ),
     medianOfEthProTrans: median(fullArr, "amount"),
-    averageOfEthProTrans: !fullArr.length ? 0 : meanBy(fullArr, "amount")
+    averageOfEthProTrans: !countOfAllTransaction
+      ? 0
+      : meanBy(fullArr, "amount"),
+    numberOfTransInput: countOfTransInput,
+    numberOfTransOutput: countOfTransOutput,
+    numberOfTransactions: countOfAllTransaction
   };
+};
+
+// todo refactor
+const getFeatureSetUpdate = (
+  address,
+  transactionsInput,
+  transactionsOutput
+) => {
+  // const inputCounters = countBy(transactionsInput, "fromAddress.labelId");
+  // const outputCounters = countBy(transactionsOutput, "toAddress.labelId");
+  const fullArr = compact(concat(transactionsInput, transactionsOutput));
+  const countOfAllTransaction = fullArr.length;
+  const countOfTransInput = !transactionsInput.length
+    ? 0
+    : transactionsInput.length;
+  const countOfTransOutput = !transactionsOutput.length
+    ? 0
+    : transactionsOutput.length;
+  if (countOfAllTransaction) {
+    /*
+    address.numberOfNone = getCounters(
+      inputCounters,
+      outputCounters,
+      0,
+      countOfAllTransaction
+    );
+    address.numberOfOneTime = getCounters(
+      inputCounters,
+      outputCounters,
+      3,
+      countOfAllTransaction
+    );
+    address.numberOfExchange = getCounters(
+      inputCounters,
+      outputCounters,
+      6,
+      countOfAllTransaction
+    );
+    address.numberOfMiningPool = getCounters(
+      inputCounters,
+      outputCounters,
+      1,
+      countOfAllTransaction
+    );
+    address.numberOfMiner = getCounters(
+      inputCounters,
+      outputCounters,
+      5,
+      countOfAllTransaction
+    );
+    address.numberOfSmContract = getCounters(
+      inputCounters,
+      outputCounters,
+      2,
+      countOfAllTransaction
+    );
+    address.numberOfERC20 = getCounters(
+      inputCounters,
+      outputCounters,
+      7,
+      countOfAllTransaction
+    );
+    address.numberOfERC721 = getCounters(
+      inputCounters,
+      outputCounters,
+      8,
+      countOfAllTransaction
+    );
+    address.numberOfTrace = getCounters(
+      inputCounters,
+      outputCounters,
+      4,
+      countOfAllTransaction
+    );
+    address.medianOfEthProTrans = median(fullArr, "amount");
+    address.averageOfEthProTrans = !countOfAllTransaction
+      ? 0
+      : meanBy(fullArr, "amount");
+      */
+    address.numberOfTransInput = countOfTransInput;
+    address.numberOfTransOutput = countOfTransOutput;
+    address.numberOfTransactions = countOfAllTransaction;
+  }
+  return address;
 };
 
 const median = (array, field = "") => {

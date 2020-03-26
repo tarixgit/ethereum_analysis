@@ -24,6 +24,7 @@ const server = new ApolloServer({
   typeDefs: gql(typeDefs),
   resolvers,
   context: { db: models },
+  debug: true,
   // origin: {
   //   requestTimeout: "50s"
   // }

@@ -4,7 +4,7 @@
   "description": "masterarbeit 2019",
   "main": "index.js",
   "scripts": {
-    "start": "node --max-old-space-size=4096 index.js",
+    "start": "node --max-old-space-size=7168 index.js",
     "start-prod": "NODE_ENV=production node --max-old-space-size=7168 index.js",
     "lint": "eslint src --color",
     "build": "babel src --out-dir dist --ignore node_modules",
