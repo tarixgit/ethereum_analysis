@@ -77,6 +77,13 @@ module.exports = `
       averageOfEthProTrans: Float,
       addresses: Address!
   }
+    type TransactionFeature {
+      id: ID!,
+      to: Int,
+      amount: Float,
+      timestamp: String,
+      scam: Boolean,
+  }
   
   type ImportAddressesWCount {
     rows: [ImportAddress!]!
@@ -103,6 +110,7 @@ module.exports = `
     importAddress(id: ID!): ImportAddress!
     importAddresses(offset: Int, limit: Int, ids: [ID], addresses: [String]): ImportAddressesWCount!
     addressFeatures(offset: Int, limit: Int, ids: [ID], addresses: [String]): AddressFeaturesWCount!
+    transactionFeatures: [TransactionFeature!]!
   }
   type Mutation {
     loadData: GeneralResponse!

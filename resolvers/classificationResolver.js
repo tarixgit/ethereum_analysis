@@ -148,6 +148,9 @@ module.exports = {
     },
     recalcFeatures: async (parent, data, { db }, info) => {
       let addresses = await db.address_feature.findAll();
+      // TODO some of Adresses have a ca 500 000 - 1 000 000 Transaction wo we can't import of all
+      // TODO make posible to set this parameter on frontend and also which type of Adresses you want to import
+      // temporal solution because some of exchange addresses have more than 500 000 transaction
       addresses = filter(addresses, ({ id }) => id < 5202 && id > 5186);
       const scamAddresses = filter(addresses, "scam");
       const whiteAddresses = filter(addresses, item => !item.scam);
@@ -397,6 +400,7 @@ const getFeatureSet = (
       4,
       countOfAllTransaction
     ),
+    // TODO try to make medianOfEthProTrans and averageOfEthProTrans for input and output
     medianOfEthProTrans: median(fullArr, "amount"),
     averageOfEthProTrans: !countOfAllTransaction
       ? 0
@@ -424,6 +428,7 @@ const getFeatureSetUpdate = (
     ? 0
     : transactionsOutput.length;
   if (countOfAllTransaction) {
+    // todo temporal for speed up
     /*
     address.numberOfNone = getCounters(
       inputCounters,
