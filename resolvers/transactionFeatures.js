@@ -1,5 +1,4 @@
-// const { Op } = require("sequelize");
-const { map, uniq, keyBy } = require("lodash");
+const { map, keyBy } = require("lodash");
 
 module.exports = {
   Query: {
@@ -14,9 +13,8 @@ module.exports = {
         },
         raw: true
       });
-      const blockIds = uniq(map(transactions, "bid"));
+      // const blockIds = uniq(map(transactions, "bid"));
       const blocks = await db.block.findAll({
-        where: { id: blockIds },
         raw: true
       });
       const blocksKeyed = keyBy(blocks, "id");

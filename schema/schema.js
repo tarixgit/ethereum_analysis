@@ -72,7 +72,28 @@ module.exports = `
       numberOfERC20: Int,
       numberOfERC721: Int,
       numberOfTrace: Int,
-      numberOfTransaction: Int,
+      numberOfTransactions: Int,
+      numberOfTransInput: Int,
+      numberOfTransOutput: Int,
+      medianOfEthProTrans: Float,
+      averageOfEthProTrans: Float,
+      addresses: Address!
+  }
+  type AddressFeatureCalc {      
+      hash: String,
+      scam: Boolean,
+      numberOfNone: Int,
+      numberOfOneTime: Int,
+      numberOfExchange: Int,
+      numberOfMiningPool: Int,
+      numberOfMiner: Int,
+      numberOfSmContract: Int,
+      numberOfERC20: Int,
+      numberOfERC721: Int,
+      numberOfTrace: Int,
+      numberOfTransactions: Int,
+      numberOfTransInput: Int,
+      numberOfTransOutput: Int,
       medianOfEthProTrans: Float,
       averageOfEthProTrans: Float,
       addresses: Address!
@@ -110,6 +131,7 @@ module.exports = `
     importAddress(id: ID!): ImportAddress!
     importAddresses(offset: Int, limit: Int, ids: [ID], addresses: [String]): ImportAddressesWCount!
     addressFeatures(offset: Int, limit: Int, ids: [ID], addresses: [String]): AddressFeaturesWCount!
+    getAndCalculateAddressFeatures(address: String!): AddressFeatureCalc!
     transactionFeatures: [TransactionFeature!]!
   }
   type Mutation {
