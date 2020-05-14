@@ -33,7 +33,12 @@ const server = new ApolloServer({
 
 const app = Hapi.server({
   // host: HOST,
-  port: PORT
+  port: PORT,
+  routes: {
+    timeout: {
+      socket: false
+    }
+  }
 });
 
 const init = async () => {

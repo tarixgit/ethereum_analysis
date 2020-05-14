@@ -98,14 +98,26 @@ module.exports = `
       averageOfEthProTrans: Float,
       addresses: Address!
   }
-    type TransactionFeature {
+  type TransactionFeature {
       id: ID!,
       to: Int,
       amount: Float,
       timestamp: String,
       scam: Boolean,
   }
-  
+  type Node {
+   id: Int!, 
+   label: String, 
+   group: Int!, 
+  }
+  type Edge {
+   from: Int,
+   to: Int,  
+  }
+  type Graph {
+   nodes: [Node!]!
+   edges: [Edge]!
+  }
   type ImportAddressesWCount {
     rows: [ImportAddress!]!
     count: Int
@@ -133,6 +145,7 @@ module.exports = `
     addressFeatures(offset: Int, limit: Int, ids: [ID], addresses: [String]): AddressFeaturesWCount!
     getAndCalculateAddressFeatures(address: String!): AddressFeatureCalc!
     transactionFeatures: [TransactionFeature!]!
+    findNeighborsScam(address: String!): Graph!
   }
   type Mutation {
     loadData: GeneralResponse!
