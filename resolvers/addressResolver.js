@@ -143,7 +143,7 @@ const findScammer = async (
 
   const transGrouped = groupBy(trans, "from");
   const newChildrenArray = flatMap(parentArr, pathToParent => {
-    const parent = pathToParent[pathToParent.length]; // is the same as transGrouped.key, iterate transGrouped.from
+    const parent = pathToParent[pathToParent.length - 1]; // is the same as transGrouped.key, iterate transGrouped.from
     const childrens = transGrouped[parent];
     return map(childrens, item => [...pathToParent, item.to]);
   });
