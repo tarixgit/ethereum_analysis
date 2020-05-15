@@ -1,4 +1,11 @@
-const { uniq, difference } = require("lodash");
+const {
+  groupBy,
+  difference,
+  findIndex,
+  flatMap,
+  map,
+  uniq
+} = require("lodash");
 
 // TODO try to use globalModel
 // let globalModel = null;
@@ -26,12 +33,14 @@ module.exports = {
        **/
       const maxDepth = 3;
       const checkedAddress = [firstAddress.id];
-      // const tree = { id: firstAddress.id, pathToFather: [], children: [] };
+      // childrensArr is array of all possible path
+      const childrensArr = [[firstAddress.id]];
       const found = await findScammer(
         [firstAddress.id],
         db,
         maxDepth,
-        checkedAddress
+        checkedAddress,
+        childrensArr
       );
       console.log(found);
       return found
@@ -92,7 +101,13 @@ module.exports = {
   }
 };
 
-const findScammer = async (inputIds, db, maxDepth, checkedAddress) => {
+const findScammer = async (
+  inputIds,
+  db,
+  maxDepth,
+  checkedAddress,
+  parentArr
+) => {
   // first try to go only out
   // create clever variable(object) to store the path
   console.log("------");
@@ -104,23 +119,35 @@ const findScammer = async (inputIds, db, maxDepth, checkedAddress) => {
   }
 
   // the next btach call because of weak Database server
-  const batchSize = 4;
-  const batchCount = Math.ceil(inputIds.length / batchSize);
-  let result = [];
-  for (let i = 0; i < batchCount; i++) {
-    const batch = await db.transaction.findAll({
-      attributes: ["id", "from", "to"],
-      where: {
-        from: inputIds.slice(i * batchSize, (i + 1) * batchSize)
-      },
-      raw: true
-    });
-    // todo add diff here
-    result = result.concat(batch);
-  }
-  const trans = result;
+  // const batchSize = 4;
+  // const batchCount = Math.ceil(inputIds.length / batchSize);
+  // let result = [];
+  // for (let i = 0; i < batchCount; i++) {
+  //   const batch = await db.transaction.findAll({
+  //     attributes: ["id", "from", "to"],
+  //     where: {
+  //       from: inputIds.slice(i * batchSize, (i + 1) * batchSize)
+  //     },
+  //     raw: true
+  //   });
+  //   // todo add diff here
+  //   result = result.concat(batch);
+  // }
+  const trans = await db.transaction.findAll({
+    attributes: ["id", "from", "to"],
+    where: {
+      from: inputIds
+    },
+    raw: true
+  });
 
-  // tree
+  const transGrouped = groupBy(trans, "from");
+  const newChildrenArray = flatMap(parentArr, pathToParent => {
+    const parent = pathToParent[pathToParent.length]; // is the same as transGrouped.key, iterate transGrouped.from
+    const childrens = transGrouped[parent];
+    return map(childrens, item => [...pathToParent, item.to]);
+  });
+
   const ids = uniq(trans.map(({ to }) => to));
   const newAddress = difference(ids, checkedAddress); // todo you can output the addresses
   checkedAddress = checkedAddress.concat(newAddress);
@@ -129,11 +156,12 @@ const findScammer = async (inputIds, db, maxDepth, checkedAddress) => {
     attributes: ["id", "addressId", "scam"],
     where: { addressId: newAddress }
   });
-  const found = addresses.find(({ scam }) => scam);
-  if (found) {
-    console.log(found);
-    return found;
+  const foundIndex = findIndex(addresses, ({ scam }) => scam);
+  if (foundIndex !== -1) {
+    console.log(foundIndex);
+    console.log(newChildrenArray[foundIndex]);
+    return newChildrenArray[foundIndex];
   } else {
-    return findScammer(ids, db, maxDepth - 1, checkedAddress);
+    return findScammer(ids, db, maxDepth - 1, checkedAddress, newChildrenArray);
   }
 };
