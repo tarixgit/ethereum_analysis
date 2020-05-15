@@ -1,10 +1,11 @@
 const {
   groupBy,
-  difference,
-  findIndex,
+  differenceWith,
+  find,
   flatMap,
   map,
-  uniq
+  uniqBy,
+  take
 } = require("lodash");
 
 // TODO try to use globalModel
@@ -19,8 +20,7 @@ module.exports = {
       info
     ) => {
       const firstAddress = await db.address.findOne({
-        where: { hash: address },
-        limit: lim || 100
+        where: { hash: address }
       });
       /**
        *  Recursion mit memo ausprobeiren oder ein normales loop
@@ -35,23 +35,34 @@ module.exports = {
       const checkedAddress = [firstAddress.id];
       // childrensArr is array of all possible path
       const childrensArr = [[firstAddress.id]];
-      const found = await findScammer(
-        [firstAddress.id],
+      const foundPath = await findScammer(
+        childrensArr,
         db,
         maxDepth,
-        checkedAddress,
-        childrensArr
+        checkedAddress
       );
-      console.log(found);
-      return found
-        ? {
-            nodes: [{ id: 0, label: "found", group: "000" }],
-            edges: [{ from: "1", to: "2" }]
-          }
-        : {
-            nodes: [{ id: 111, label: "not found", group: "111" }],
-            edges: [{ from: "11", to: "11" }]
-          };
+      if (typeof foundPath === "string") {
+        return {
+          nodes: [{ id: 111, label: "not found", group: "111" }],
+          edges: [{ from: "11", to: "11" }],
+          error: foundPath
+        };
+      }
+      // because of memory leak, make one more Query for data asking
+      const addressesPath = await db.address.findAll({
+        where: { id: foundPath }
+      });
+      return {
+        nodes: map(addressesPath, ({ id, hash, labelId }) => ({
+          id,
+          label: hash,
+          group: labelId
+        })),
+        edges: map(take(foundPath, foundPath.length - 1), (id, index) => ({
+          from: id,
+          to: foundPath[index + 1]
+        }))
+      };
     },
     address: (parent, { id }, { db }, info) => db.address.findByPk(id),
     addresses: (parent, { address, limit: lim }, { db }, info) =>
@@ -101,24 +112,14 @@ module.exports = {
   }
 };
 
-const findScammer = async (
-  inputIds,
-  db,
-  maxDepth,
-  checkedAddress,
-  parentArr
-) => {
+const findScammer = async (parentArr, db, maxDepth, checkedAddress) => {
   // first try to go only out
   // create clever variable(object) to store the path
-  console.log("------");
-  console.log("------");
-  console.log("Start");
-  console.log(maxDepth);
   if (maxDepth <= 0) {
     return Promise.resolve("error: max depth arrive");
   }
 
-  // the next btach call because of weak Database server
+  // the next batch call because of weak Database server
   // const batchSize = 4;
   // const batchCount = Math.ceil(inputIds.length / batchSize);
   // let result = [];
@@ -133,35 +134,51 @@ const findScammer = async (
   //   // todo add diff here
   //   result = result.concat(batch);
   // }
+  const parentIds = map(parentArr, arr => arr[arr.length - 1]);
   const trans = await db.transaction.findAll({
     attributes: ["id", "from", "to"],
     where: {
-      from: inputIds
+      from: parentIds
     },
     raw: true
   });
 
-  const transGrouped = groupBy(trans, "from");
+  // performance?
+  // remove cricles
+  const transFiltered = differenceWith(
+    trans,
+    checkedAddress,
+    (valueNew, valueOld) => valueNew.to === valueOld
+  );
+
+  // build paths
+  const transGrouped = groupBy(transFiltered, "from");
   const newChildrenArray = flatMap(parentArr, pathToParent => {
     const parent = pathToParent[pathToParent.length - 1]; // is the same as transGrouped.key, iterate transGrouped.from
-    const childrens = transGrouped[parent];
-    return map(childrens, item => [...pathToParent, item.to]);
+    let oneParentMoreChildrens = transGrouped[parent];
+    oneParentMoreChildrens = uniqBy(oneParentMoreChildrens, "to"); // not good, if need sum of amout
+    return map(oneParentMoreChildrens, item => [...pathToParent, item.to]);
   });
-
-  const ids = uniq(trans.map(({ to }) => to));
-  const newAddress = difference(ids, checkedAddress); // todo you can output the addresses
-  checkedAddress = checkedAddress.concat(newAddress);
+  const childrensIds = map(newChildrenArray, arr => arr[arr.length - 1]);
+  checkedAddress = checkedAddress.concat(childrensIds);
+  // const ids = uniq(trans.map(({ to }) => to));
+  // const newAddress = difference(ids, checkedAddress); // todo you can output the addresses
+  // checkedAddress = checkedAddress.concat(newAddress);
 
   const addresses = await db.address_feature.findAll({
     attributes: ["id", "addressId", "scam"],
-    where: { addressId: newAddress }
+    where: { addressId: childrensIds }
   });
-  const foundIndex = findIndex(addresses, ({ scam }) => scam);
-  if (foundIndex !== -1) {
-    console.log(foundIndex);
-    console.log(newChildrenArray[foundIndex]);
-    return newChildrenArray[foundIndex];
+  const foundScamAddress = find(addresses, ({ scam }) => scam);
+  if (foundScamAddress) {
+    console.log(foundScamAddress);
+    const pathToScam = find(
+      newChildrenArray,
+      path => path[path.length - 1] === foundScamAddress.addressId
+    );
+    console.log(pathToScam);
+    return pathToScam;
   } else {
-    return findScammer(ids, db, maxDepth - 1, checkedAddress, newChildrenArray);
+    return findScammer(newChildrenArray, db, maxDepth - 1, checkedAddress);
   }
 };
