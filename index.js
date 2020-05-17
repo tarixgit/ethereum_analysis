@@ -28,7 +28,18 @@ const server = new ApolloServer({
   // origin: {
   //   requestTimeout: "50s"
   // }
-  tracing: !!process.env.PROD
+  tracing: !!process.env.PROD,
+  subscriptions: {
+    onConnect: (connectionParams, webSocket) => {
+      if (connectionParams) {
+        console.log("WS conected with parameters:");
+        console.log(connectionParams);
+        return Promise.resolve();
+      }
+
+      throw new Error("Missing auth token!");
+    }
+  }
 });
 
 const app = Hapi.server({

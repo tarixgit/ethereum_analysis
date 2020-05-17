@@ -7,11 +7,33 @@ const {
   uniqBy,
   take
 } = require("lodash");
+const { PubSub } = require("apollo-server");
+const pubsub = new PubSub();
 
+const FOUND_NEIGHBOR = "foundNeighborStr";
+const MESSAGE = "message";
 // TODO try to use globalModel
 // let globalModel = null;
 
 module.exports = {
+  Subscription: {
+    neighborsScamFounded: {
+      resolve: payload => {
+        return {
+          customData: payload
+        };
+      },
+      subscribe: () => pubsub.asyncIterator(FOUND_NEIGHBOR)
+    },
+    message: {
+      resolve: payload => {
+        return {
+          customData: payload
+        };
+      },
+      subscribe: () => pubsub.asyncIterator(MESSAGE)
+    }
+  },
   Query: {
     findNeighborsScam: async (
       parent,
@@ -35,15 +57,18 @@ module.exports = {
       const checkedAddress = [firstAddress.id];
       // childrensArr is array of all possible path
       const childrensArr = [[firstAddress.id]];
+      pubsub.publish(FOUND_NEIGHBOR, { messg: "Step", step: maxDepth });
       const foundPath = await findScammer(
         childrensArr,
         db,
         maxDepth,
         checkedAddress
       );
+      // do return,
+      // make async fuction, aber ohne await
       if (typeof foundPath === "string") {
         return {
-          nodes: [{ id: 111, label: "not found", group: "111" }],
+          nodes: [{ id: 111, label: "stared", group: "111" }],
           edges: [{ from: "11", to: "11" }],
           error: foundPath
         };
@@ -118,7 +143,7 @@ const findScammer = async (parentArr, db, maxDepth, checkedAddress) => {
   if (maxDepth <= 0) {
     return Promise.resolve("error: max depth arrive");
   }
-
+  pubsub.publish(FOUND_NEIGHBOR, { messg: "Step", step: maxDepth });
   // the next batch call because of weak Database server
   // const batchSize = 4;
   // const batchCount = Math.ceil(inputIds.length / batchSize);

@@ -117,6 +117,7 @@ module.exports = `
   type Graph {
    nodes: [Node!]!
    edges: [Edge]!
+   error: String
   }
   type ImportAddressesWCount {
     rows: [ImportAddress!]!
@@ -156,6 +157,9 @@ module.exports = `
   type GeneralResponse {
       success: Boolean!
       message: String
+  }
+  type Subscription {
+    findNeighborsScam(address: String!): Graph!
   }
 `;
 
