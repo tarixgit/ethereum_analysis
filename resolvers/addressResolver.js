@@ -12,26 +12,16 @@ const pubsub = new PubSub();
 
 const FOUND_NEIGHBOR = "foundNeighborStr";
 const MESSAGE = "message";
-// TODO try to use globalModel
+// TODO try to use globalModel - not needed
 // let globalModel = null;
 
 module.exports = {
   Subscription: {
     neighborsScamFounded: {
-      resolve: payload => {
-        return {
-          customData: payload
-        };
-      },
       subscribe: () => pubsub.asyncIterator(FOUND_NEIGHBOR)
     },
-    message: {
-      resolve: payload => {
-        return {
-          customData: payload
-        };
-      },
-      subscribe: () => pubsub.asyncIterator(MESSAGE)
+    messageNotify: {
+      subscribe: () => pubsub.asyncIterator(MESSAGE) // todo use to recieve messg from frontend to break the calc
     }
   },
   Query: {
@@ -57,7 +47,7 @@ module.exports = {
       const checkedAddress = [firstAddress.id];
       // childrensArr is array of all possible path
       const childrensArr = [[firstAddress.id]];
-      pubsub.publish(FOUND_NEIGHBOR, { messg: "Step", step: maxDepth });
+      pubsub.publish(MESSAGE, { messageNotify: { message: "Started" } });
       const foundPath = await findScammer(
         childrensArr,
         db,
@@ -65,9 +55,10 @@ module.exports = {
         checkedAddress
       );
       // do return,
-      // make async fuction, aber ohne await
+      // todo make async fuction, aber ohne await
+      let answer = {};
       if (typeof foundPath === "string") {
-        return {
+        answer = {
           nodes: [{ id: 111, label: "stared", group: "111" }],
           edges: [{ from: "11", to: "11" }],
           error: foundPath
@@ -77,7 +68,8 @@ module.exports = {
       const addressesPath = await db.address.findAll({
         where: { id: foundPath }
       });
-      return {
+
+      answer = {
         nodes: map(addressesPath, ({ id, hash, labelId }) => ({
           id,
           label: hash,
@@ -88,6 +80,8 @@ module.exports = {
           to: foundPath[index + 1]
         }))
       };
+      pubsub.publish(FOUND_NEIGHBOR, { neighborsScamFounded: answer });
+      return answer;
     },
     address: (parent, { id }, { db }, info) => db.address.findByPk(id),
     addresses: (parent, { address, limit: lim }, { db }, info) =>
@@ -143,7 +137,8 @@ const findScammer = async (parentArr, db, maxDepth, checkedAddress) => {
   if (maxDepth <= 0) {
     return Promise.resolve("error: max depth arrive");
   }
-  pubsub.publish(FOUND_NEIGHBOR, { messg: "Step", step: maxDepth });
+  pubsub.publish(MESSAGE, { message: "Started" });
+
   // the next batch call because of weak Database server
   // const batchSize = 4;
   // const batchCount = Math.ceil(inputIds.length / batchSize);

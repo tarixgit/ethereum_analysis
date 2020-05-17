@@ -127,7 +127,10 @@ module.exports = `
     rows: [AddressFeature!]!
     count: Int
   }
-   
+  type MessageNotify {
+      message: String!
+  }
+  
   type Query {
     address(id: ID!): Address!
     addresses(limit: Int, address: String): [Address!]!
@@ -159,7 +162,8 @@ module.exports = `
       message: String
   }
   type Subscription {
-    findNeighborsScam(address: String!): Graph!
+    neighborsScamFounded: Graph
+    messageNotify: MessageNotify!
   }
 `;
 

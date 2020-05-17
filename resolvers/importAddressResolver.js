@@ -19,6 +19,7 @@ module.exports = {
       if (ids) {
         whereOr.push({ id: ids });
       }
+
       return db.import_address.findAndCountAll({
         where: whereOr.length ? { [Op.or]: [...whereOr] } : null,
         offset,
