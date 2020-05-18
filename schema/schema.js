@@ -152,6 +152,7 @@ module.exports = `
     findNeighborsScam(address: String!): Graph!
   }
   type Mutation {
+    findNeighborsScamThread(address: String!): GeneralResponse!
     loadData: GeneralResponse!
     buildFeatures: GeneralResponse!
     recalcFeatures: GeneralResponse!
