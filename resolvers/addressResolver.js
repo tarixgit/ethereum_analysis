@@ -46,8 +46,9 @@ module.exports = {
           : {}
       );
       forked.on("message", async ({ foundPath, msg = null }) => {
+        console.log(foundPath); // todo temp
         console.log(msg); // todo error
-        pubsub.publish(MESSAGE, { messageNotify: { message: foundPath } });
+        pubsub.publish(MESSAGE, { messageNotify: { message: msg } });
         if (typeof foundPath !== "string") {
           const addressesPath = await db.address.findAll({
             where: { id: foundPath }

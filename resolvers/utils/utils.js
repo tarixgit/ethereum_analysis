@@ -11,11 +11,13 @@ const findScammer = async (parentArr, db, maxDepth, checkedAddress) => {
   // first try to go only out
   // create clever variable(object) to store the path
   if (maxDepth <= 0) {
+    process.send({
+      msg: `Maximal level of looping arrive. Checked the ${checkedAddress.leading} addresses`
+    });
     return Promise.resolve("error: max depth arrive");
   }
   console.log(maxDepth);
 
-  console.log("startiiiiing");
   // the next batch call because of weak Database server
   // const batchSize = 4;
   // const batchCount = Math.ceil(inputIds.length / batchSize);
@@ -67,12 +69,14 @@ const findScammer = async (parentArr, db, maxDepth, checkedAddress) => {
     where: { addressId: childrensIds }
   });
   const foundScamAddress = find(addresses, ({ scam }) => scam);
+  process.send({ msg: `Checking of level number ${maxDepth} is done` });
   if (foundScamAddress) {
     console.log(foundScamAddress);
     const pathToScam = find(
       newChildrenArray,
       path => path[path.length - 1] === foundScamAddress.addressId
     );
+    process.send({ msg: `Found the scam address in neighbors` });
     console.log(pathToScam);
     return pathToScam;
   } else {
