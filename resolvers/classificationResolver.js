@@ -25,10 +25,9 @@ const options = {
 
 module.exports = {
   Mutation: {
-    // login: async (parent, { id }, { db }, info) => {
-    //   const user = await dataSources.userAPI.findOrCreateUser({ email });
-    //   if (user) return Buffer.from(email).toString("base64");
-    // } findOrCreate
+    /**
+     * import black list data from API "https://etherscamdb.info/api/scams/" that no included in db
+     * */
     loadData: async (parent, data, { db }, info) => {
       try {
         const results = await rp(options);
@@ -82,7 +81,7 @@ module.exports = {
           };
         }
         return {
-          success: !!results,
+          success: !results,
           message: `Warning! Etherscamdb not answered.`
         };
       } catch (err) {
