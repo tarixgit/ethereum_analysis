@@ -1,4 +1,5 @@
 const { Op } = require("sequelize");
+const { map } = require("lodash");
 
 module.exports = {
   Query: {
@@ -7,23 +8,27 @@ module.exports = {
 
     importAddresses: (
       parent,
-      { addresses = null, limit: lim, offset, ids = null },
+      { orderBy, addresses = null, limit: lim, offset, ids = null },
       { db },
       info
     ) => {
       const whereOr = [];
-      // TODO keyed Obj map
+      let order = null;
       if (addresses) {
         whereOr.push({ hash: addresses });
       }
       if (ids) {
         whereOr.push({ id: ids });
       }
+      if (orderBy && orderBy.length && orderBy[0]) {
+        order = map(orderBy, order => [order.field, order.type]);
+      }
 
       return db.import_address.findAndCountAll({
         where: whereOr.length ? { [Op.or]: [...whereOr] } : null,
         offset,
-        limit: lim || 100
+        limit: lim || 100,
+        order
       });
     }
   }

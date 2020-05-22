@@ -1,16 +1,17 @@
 const { Op } = require("sequelize");
+const { map } = require("lodash");
 const { buildFeatureForAddresses } = require("./utils");
 
 module.exports = {
   Query: {
     addressFeatures: (
       parent,
-      { addresses = null, limit: lim, offset, ids = null },
+      { orderBy, addresses = null, limit: lim, offset, ids = null },
       { db },
       info
     ) => {
       const whereOr = [];
-      // TODO keyed Obj map
+      let order = null;
       if (addresses) {
         whereOr.push({ hash: addresses });
       }
@@ -22,10 +23,15 @@ module.exports = {
           where: whereOr.length ? { [Op.or]: [...whereOr] } : null
         });
       }
+      if (orderBy && orderBy.length && orderBy[0]) {
+        order = map(orderBy, order => [order.field, order.type]);
+      }
+
       return db.address_feature.findAndCountAll({
         where: whereOr.length ? { [Op.or]: [...whereOr] } : null,
         offset,
-        limit: lim
+        limit: lim,
+        order
       });
     },
     getAndCalculateAddressFeatures: async (

@@ -131,7 +131,10 @@ module.exports = `
   type MessageNotify {
       message: String!
   }
-  
+  input Order {
+      field: String
+      type: String
+  }
   type Query {
     address(id: ID!): Address!
     addresses(limit: Int, address: String): [Address!]!
@@ -146,8 +149,8 @@ module.exports = `
     transaction(id: ID!, address: String, fromAddress: String, toAddress: String ): Transaction!
     transactions(limit: Int, ids: ID, fromAddress: ID, toAddress: ID ): [Transaction!]!
     importAddress(id: ID!): ImportAddress!
-    importAddresses(offset: Int, limit: Int, ids: [ID], addresses: [String]): ImportAddressesWCount!
-    addressFeatures(offset: Int, limit: Int, ids: [ID], addresses: [String]): AddressFeaturesWCount!
+    importAddresses(orderBy: [Order], offset: Int, limit: Int, ids: [ID], addresses: [String]): ImportAddressesWCount!
+    addressFeatures(orderBy: [Order], offset: Int, limit: Int, ids: [ID], addresses: [String]): AddressFeaturesWCount!
     getAndCalculateAddressFeatures(address: String!): AddressFeatureCalc!
     transactionFeatures: [TransactionFeature!]!
     findNeighborsScam(address: String!): Graph!
