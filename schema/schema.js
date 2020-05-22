@@ -58,6 +58,7 @@ module.exports = `
       subcategory: String,
       reporter: String,
       status: String
+      scam: Boolean,
   }
   type AddressFeature {
       id: ID!,
