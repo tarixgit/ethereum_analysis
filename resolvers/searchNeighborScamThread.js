@@ -7,7 +7,6 @@ const {
   uniqBy
 } = require("lodash");
 const models = require("../models/index");
-// const models = require("./models");
 
 process.on("message", x => {
   const { childrensArr, maxDepth, checkedAddress } = x;
@@ -36,16 +35,11 @@ async function findScammers(childrensArr, maxDepth, checkedAddress) {
 }
 
 const findScammer = async (parentArr, db, maxDepth, checkedAddress) => {
-  // first try to go only out
-  // create clever variable(object) to store the path
-  if (maxDepth <= 0) {
-    process.send({
-      msg: `Maximal level of looping arrive. Checked the ${checkedAddress.leading} addresses`
-    });
-    return Promise.resolve("error: max depth arrive");
-  }
   console.log(maxDepth);
-
+  if (maxDepth <= 0) {
+    // eslint-disable-next-line no-throw-literal
+    throw `Maximal level of looping arrive. Checked the ${checkedAddress.length} addresses`;
+  }
   const parentIds = map(parentArr, arr => arr[arr.length - 1]);
   const trans = await db.transaction.findAll({
     attributes: ["id", "from", "to"],
@@ -55,7 +49,6 @@ const findScammer = async (parentArr, db, maxDepth, checkedAddress) => {
     raw: true
   });
 
-  // performance?
   // remove cricles
   const transFiltered = differenceWith(
     trans,
@@ -82,7 +75,7 @@ const findScammer = async (parentArr, db, maxDepth, checkedAddress) => {
     where: { addressId: childrensIds }
   });
   const foundScamAddress = find(addresses, ({ scam }) => scam);
-  // process.send({ msg: `Checking of level number ${maxDepth} is done` });
+  process.send({ msg: `Checking of level number ${maxDepth} is done` });
   if (foundScamAddress) {
     console.log(foundScamAddress);
     const pathToScam = find(
@@ -90,7 +83,6 @@ const findScammer = async (parentArr, db, maxDepth, checkedAddress) => {
       path => path[path.length - 1] === foundScamAddress.addressId
     );
     process.send({ msg: `Found the scam address in neighbors` });
-    console.log(pathToScam);
     return pathToScam;
   } else {
     return findScammer(newChildrenArray, db, maxDepth - 1, checkedAddress);
