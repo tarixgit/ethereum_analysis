@@ -1,4 +1,4 @@
-const { map, take } = require("lodash");
+const { map, take, isArray } = require("lodash");
 const { fork } = require("child_process");
 const path = require("path");
 const { findScammer } = require("./utils/utils");
@@ -46,10 +46,9 @@ module.exports = {
           : {}
       );
       forked.on("message", async ({ foundPath, msg = null }) => {
-        console.log(foundPath); // todo temp
-        console.log(msg); // todo error
+        console.log("Recieved message from thread:", msg);
         pubsub.publish(MESSAGE, { messageNotify: { message: msg } });
-        if (typeof foundPath !== "string") {
+        if (foundPath && isArray(foundPath)) {
           const addressesPath = await db.address.findAll({
             where: { id: foundPath }
           });
