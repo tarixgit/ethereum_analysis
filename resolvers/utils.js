@@ -72,6 +72,7 @@ module.exports = {
   },
   updateFeatureForAdresses: async (db, addresses) => {
     const ids = uniq(map(addresses, "addressId"));
+    // TODO make one transaction findAll?, not two, test with counts
     let transactionsInputs = await db.transaction.findAll({
       attributes: ["id", "bid", "tid", "from", "to", "amount"],
       where: {
@@ -246,8 +247,8 @@ const getFeatureSetUpdate = (
   transactionsInput,
   transactionsOutput
 ) => {
-  // const inputCounters = countBy(transactionsInput, "fromAddress.labelId");
-  // const outputCounters = countBy(transactionsOutput, "toAddress.labelId");
+  const inputCounters = countBy(transactionsInput, "fromAddress.labelId");
+  const outputCounters = countBy(transactionsOutput, "toAddress.labelId");
   const fullArr = compact(concat(transactionsInput, transactionsOutput));
   const countOfAllTransaction = fullArr.length;
   const countOfTransInput = !transactionsInput.length
@@ -257,8 +258,6 @@ const getFeatureSetUpdate = (
     ? 0
     : transactionsOutput.length;
   if (countOfAllTransaction) {
-    // todo temporal for speed up
-    /*
     address.numberOfNone = getCounters(
       inputCounters,
       outputCounters,
@@ -317,7 +316,6 @@ const getFeatureSetUpdate = (
     address.averageOfEthProTrans = !countOfAllTransaction
       ? 0
       : meanBy(fullArr, "amount");
-      */
     address.numberOfTransInput = countOfTransInput;
     address.numberOfTransOutput = countOfTransOutput;
     address.numberOfTransactions = countOfAllTransaction;

@@ -144,6 +144,9 @@ module.exports = {
       }
     },
     recalcFeatures: async (parent, data, { db }, info) => {
+      /**
+       * needed if db with blockchain updatet
+       * */
       let addresses = await db.address_feature.findAll();
       // TODO some of Adresses have a ca 500 000 - 1 000 000 Transaction wo we can't import of all
       // TODO make posible to set this parameter on frontend and also which type of Adresses you want to import
@@ -152,7 +155,6 @@ module.exports = {
       const scamAddresses = filter(addresses, "scam");
       const whiteAddresses = filter(addresses, item => !item.scam);
 
-      // TODO to speedup use addresses ids in this sub-func
       const scamAddressFeatures = await updateFeatureForAdresses(
         db,
         scamAddresses,
