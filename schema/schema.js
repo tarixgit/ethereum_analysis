@@ -123,6 +123,7 @@ module.exports = `
   type Log {
     name: String
     description: String
+    createdAt: String
   }
   type ImportAddressesWCount {
     rows: [ImportAddress!]!
