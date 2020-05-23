@@ -2,6 +2,7 @@ const { map, take, isArray } = require("lodash");
 const { fork } = require("child_process");
 const path = require("path");
 const { findScammer } = require("./utils/utils");
+const { addLog } = require("./utils"); // todo combine
 const { PubSub } = require("apollo-server");
 
 const pubsub = new PubSub();
@@ -46,7 +47,7 @@ module.exports = {
           : {}
       );
       forked.on("message", async ({ foundPath, msg = null }) => {
-        console.log("Recieved message from thread:", msg);
+        addLog("searchNeighborScamThread", msg);
         pubsub.publish(MESSAGE, { messageNotify: { message: msg } });
         if (foundPath && isArray(foundPath)) {
           const addressesPath = await db.address.findAll({
@@ -67,7 +68,10 @@ module.exports = {
         }
       });
       forked.on("exit", async status => {
-        console.log("Searching process in thread stopped with code: " + status);
+        await addLog(
+          "searchNeighborScamThread",
+          `Searching process in thread stopped with code: ${status}`
+        );
         if (status) {
           pubsub.publish(MESSAGE, {
             messageNotify: {
@@ -82,6 +86,7 @@ module.exports = {
           });
         }
       });
+      await addLog("searchNeighborScamThread", `child pid: ${forked.pid}`);
       forked.send({
         childrensArr,
         maxDepth,

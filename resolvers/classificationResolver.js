@@ -14,7 +14,8 @@ const path = require("path");
 
 const {
   buildFeatureForAddresses,
-  updateFeatureForAdresses
+  updateFeatureForAdresses,
+  addLog
 } = require("./utils");
 const pubsub = new PubSub();
 
@@ -197,7 +198,7 @@ module.exports = {
     }
   }
 };
-const startThreadCalc = isRecalc => {
+const startThreadCalc = async isRecalc => {
   const port = Math.floor(Math.random() * (65000 - 20000) + 20000);
   const forked = fork(
     path.join(__dirname, "buildFeaturesThread.js"),
@@ -208,12 +209,15 @@ const startThreadCalc = isRecalc => {
         }
       : {}
   );
-  forked.on("message", async ({ msg = null }) => {
-    console.log("Recieved message from thread:", msg);
+  forked.on("message", ({ msg = null }) => {
+    addLog("buildFeaturesThread", msg); // no needed await
     pubsub.publish(MESSAGE, { messageNotify: { message: msg } });
   });
   forked.on("exit", async status => {
-    console.log("Searching process in thread stopped with code: " + status);
+    await addLog(
+      "buildFeaturesThread",
+      `Feature calculation process in thread stopped with code: ${status}`
+    );
     if (status) {
       pubsub.publish(MESSAGE, {
         messageNotify: {
@@ -228,6 +232,7 @@ const startThreadCalc = isRecalc => {
       });
     }
   });
+  await addLog("buildFeaturesThread", `child pid: ${forked.pid}`);
   forked.send({
     isRecalc
   });

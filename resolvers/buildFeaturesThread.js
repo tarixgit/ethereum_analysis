@@ -11,21 +11,22 @@ const {
   concat,
   compact
 } = require("lodash");
-const { getCounters, median } = require("./utils");
+const { getCounters, median, addLog } = require("./utils");
 const models = require("../models/index");
 
 process.on("message", x => {
   const { isRecalc } = x;
-  console.log(
-    isRecalc
-      ? "Started thread recalculation of features"
-      : "Started thread for features build for new address"
-  );
   return buildFeaturesMain(isRecalc);
 });
 
 async function buildFeaturesMain(isRecalc) {
   try {
+    await addLog(
+      "buildFeaturesThread",
+      isRecalc
+        ? "Started thread recalculation of features"
+        : "Started thread for features build for new address"
+    );
     const msg = isRecalc ? await recalcFeatures() : await buildFeatures();
     process.send({ msg });
     process.exit(0);

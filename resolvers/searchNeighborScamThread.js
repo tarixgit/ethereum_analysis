@@ -1,3 +1,5 @@
+import { addLog } from "./utils";
+
 const {
   groupBy,
   differenceWith,
@@ -10,13 +12,19 @@ const models = require("../models/index");
 
 process.on("message", x => {
   const { childrensArr, maxDepth, checkedAddress } = x;
-  console.log("Recieved the number of adresses: ", childrensArr.length);
   return findScammers(childrensArr, maxDepth, checkedAddress);
 });
 
 async function findScammers(childrensArr, maxDepth, checkedAddress) {
   try {
-    console.log("one");
+    await addLog(
+      "buildFeaturesThread",
+      `Started thread for searching scam neighbors with maxDepth ${maxDepth}`
+    );
+    await addLog(
+      "buildFeaturesThread",
+      `Recieved the number of adresses: ${childrensArr.length}`
+    );
     const foundPath = await findScammer(
       childrensArr,
       models,

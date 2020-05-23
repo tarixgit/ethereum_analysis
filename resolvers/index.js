@@ -6,6 +6,7 @@ const classificationResolver = require("./classificationResolver");
 const importAddressResolver = require("./importAddressResolver");
 const addressFeatures = require("./addressFeatures");
 const transactionFeatures = require("./transactionFeatures");
+const logsResolver = require("./logsResolver");
 
 module.exports = merge(
   mainResolver,
@@ -14,5 +15,6 @@ module.exports = merge(
   classificationResolver,
   importAddressResolver,
   addressFeatures,
-  transactionFeatures
+  transactionFeatures,
+  logsResolver
 );

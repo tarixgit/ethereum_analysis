@@ -120,12 +120,20 @@ module.exports = `
    edges: [Edge]!
    error: String
   }
+  type Log {
+    name: String
+    description: String
+  }
   type ImportAddressesWCount {
     rows: [ImportAddress!]!
     count: Int
   } 
    type AddressFeaturesWCount {
     rows: [AddressFeature!]!
+    count: Int
+  }
+  type Logs {
+    rows: [Log]!
     count: Int
   }
   type MessageNotify {
@@ -151,6 +159,7 @@ module.exports = `
     importAddress(id: ID!): ImportAddress!
     importAddresses(orderBy: [Order], offset: Int, limit: Int, ids: [ID], addresses: [String]): ImportAddressesWCount!
     addressFeatures(orderBy: [Order], offset: Int, limit: Int, ids: [ID], addresses: [String]): AddressFeaturesWCount!
+    logs(orderBy: [Order], offset: Int, limit: Int, ids: [ID], addresses: [String]): Logs!
     getAndCalculateAddressFeatures(address: String!): AddressFeatureCalc!
     transactionFeatures: [TransactionFeature!]!
     findNeighborsScam(address: String!): Graph!

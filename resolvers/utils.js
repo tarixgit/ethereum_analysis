@@ -1,5 +1,6 @@
 const { map, uniq, groupBy, keyBy, sortBy } = require("lodash");
 const { getFeatureSet, getFeatureSetUpdate } = require("./buildFeaturesThread");
+const models = require("../models/index");
 
 const getCounters = (inputCounters, outputCounters, index) =>
   inputCounters[index] || 0 + outputCounters[index] || 0;
@@ -138,6 +139,10 @@ module.exports = {
     });
 
     return addressFeaturesUpdated;
+  },
+  addLog: async (name, description) => {
+    console.log(`${name}: ${description}`);
+    return models.log.create({ name, description });
   },
   getCounters,
   median
