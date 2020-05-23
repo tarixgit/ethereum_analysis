@@ -121,6 +121,7 @@ module.exports = `
    error: String
   }
   type Log {
+    id: Int!, 
     name: String
     description: String
     createdAt: String
