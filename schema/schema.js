@@ -160,6 +160,8 @@ module.exports = `
     loadData: GeneralResponse!
     buildFeatures: GeneralResponse!
     recalcFeatures: GeneralResponse!
+    buildFeaturesThread: GeneralResponse!
+    recalcFeaturesThread: GeneralResponse!
     login(email: String): String # login token
   }
   type GeneralResponse {

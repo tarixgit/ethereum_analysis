@@ -5,15 +5,23 @@ const {
   map,
   differenceBy,
   uniqBy,
-  slice,
   concat
 } = require("lodash");
 const rp = require("request-promise");
+const { PubSub } = require("apollo-server");
+const { fork } = require("child_process");
+const path = require("path");
 
 const {
   buildFeatureForAddresses,
   updateFeatureForAdresses
 } = require("./utils");
+const pubsub = new PubSub();
+
+const debugMode =
+  typeof v8debug === "object" ||
+  /--debug|--inspect/.test(process.execArgv.join(" "));
+const MESSAGE = "message";
 
 const options = {
   uri: "https://etherscamdb.info/api/scams/",
@@ -120,12 +128,9 @@ module.exports = {
           importScamAddressesNotInDB,
           true
         );
-        // TODO some of Adresses have a ca 500 000 - 1 000 000 Transaction wo we can't import of all
-        // TODO make posible to set this parameter on frontend and also which type of Adresses you want to import
-        const tempArr = slice(importWhiteAddressesNotInDB, 140, 160);
         const normalAddressFeatures = await buildFeatureForAddresses(
           db,
-          tempArr,
+          importWhiteAddressesNotInDB,
           false
         );
         const addressFeatures = concat(
@@ -147,29 +152,24 @@ module.exports = {
       /**
        * needed if db with blockchain updatet
        * */
-      let addresses = await db.address_feature.findAll();
-      // TODO some of Adresses have a ca 500 000 - 1 000 000 Transaction wo we can't import of all
-      // TODO make posible to set this parameter on frontend and also which type of Adresses you want to import
-      // temporal solution because some of exchange addresses have more than 500 000 transaction
-      addresses = filter(addresses, ({ id }) => id < 5202 && id > 5186);
+      const addresses = await db.address_feature.findAll();
+      // TODO make posible to set this parameter on frontend and also which type of Adresses you want to import/calc
+      // addresses = filter(addresses, ({ id }) => id < 4173 && id > 4169);
       const scamAddresses = filter(addresses, "scam");
       const whiteAddresses = filter(addresses, item => !item.scam);
 
       const scamAddressFeatures = await updateFeatureForAdresses(
         db,
-        scamAddresses,
-        true
+        scamAddresses
       );
       const normalAddressFeatures = await updateFeatureForAdresses(
         db,
-        whiteAddresses,
-        false
+        whiteAddresses
       );
       const addressFeatures = concat(
         scamAddressFeatures,
         normalAddressFeatures
       );
-      // TODO hack how to update, every must be single query
       if (addressFeatures.length) {
         forEach(addressFeatures, address => address.save());
       }
@@ -177,6 +177,58 @@ module.exports = {
         success: !!addressFeatures,
         message: `Success`
       };
+    },
+    buildFeaturesThread: async (parent, data, { db }, info) => {
+      startThreadCalc(false);
+      return {
+        success: true,
+        message: "Calculation running"
+      };
+    },
+    recalcFeaturesThread: async (parent, data, { db }, info) => {
+      /**
+       * needed if db with blockchain updatet
+       * */
+      startThreadCalc(true);
+      return {
+        success: true,
+        message: "Calculation running"
+      };
     }
   }
+};
+const startThreadCalc = isRecalc => {
+  const port = Math.floor(Math.random() * (65000 - 20000) + 20000);
+  const forked = fork(
+    path.join(__dirname, "buildFeaturesThread.js"),
+    [],
+    debugMode
+      ? {
+          execArgv: ["--inspect-brk=" + port]
+        }
+      : {}
+  );
+  forked.on("message", async ({ msg = null }) => {
+    console.log("Recieved message from thread:", msg);
+    pubsub.publish(MESSAGE, { messageNotify: { message: msg } });
+  });
+  forked.on("exit", async status => {
+    console.log("Searching process in thread stopped with code: " + status);
+    if (status) {
+      pubsub.publish(MESSAGE, {
+        messageNotify: {
+          message: "Error by features calc"
+        }
+      });
+    } else {
+      pubsub.publish(MESSAGE, {
+        messageNotify: {
+          message: "Features calculations ends successful"
+        }
+      });
+    }
+  });
+  forked.send({
+    isRecalc
+  });
 };
