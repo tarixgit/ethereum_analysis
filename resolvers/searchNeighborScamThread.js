@@ -1,4 +1,4 @@
-import { addLog } from "./utils";
+const { addLog } = require("./utils");
 
 const {
   groupBy,
