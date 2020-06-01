@@ -1,11 +1,9 @@
+const pubsub = require("./pubsub");
 const { map, take, isArray } = require("lodash");
 const { fork } = require("child_process");
 const path = require("path");
 const { findScammer } = require("./utils/utils");
-const { addLog } = require("./utils"); // todo combine
-const { PubSub } = require("apollo-server");
-
-const pubsub = new PubSub();
+const { addLog } = require("./utils");
 
 const debugMode =
   typeof v8debug === "object" ||
@@ -99,6 +97,7 @@ module.exports = {
     }
   },
   Query: {
+    // TODO not used!!!
     findNeighborsScam: async (
       parent,
       { address, limit: lim },

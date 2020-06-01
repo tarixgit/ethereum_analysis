@@ -1,3 +1,4 @@
+const pubsub = require("./pubsub");
 const {
   filter,
   forEach,
@@ -8,7 +9,6 @@ const {
   concat
 } = require("lodash");
 const rp = require("request-promise");
-const { PubSub } = require("apollo-server");
 const { fork } = require("child_process");
 const path = require("path");
 
@@ -17,7 +17,6 @@ const {
   updateFeatureForAdresses,
   addLog
 } = require("./utils");
-const pubsub = new PubSub();
 
 const debugMode =
   typeof v8debug === "object" ||

@@ -83,7 +83,6 @@ const buildFeatures = async () => {
   );
   const scamAddresses = await getAddress(importScamAddressesNotInDB);
   const scamAddressFeatures = await updateFeatureForAdresses(
-    models,
     scamAddresses,
     false,
     true
@@ -91,7 +90,6 @@ const buildFeatures = async () => {
   process.send({ msg: "Calculation for scam address are done " });
   const whiteAddresses = await getAddress(importWhiteAddressesNotInDB);
   const normalAddressFeatures = await updateFeatureForAdresses(
-    models,
     whiteAddresses,
     false,
     false
@@ -100,8 +98,7 @@ const buildFeatures = async () => {
   const addressFeatures = concat(scamAddressFeatures, normalAddressFeatures);
   if (addressFeatures.length) {
     await models.address_feature.bulkCreate(addressFeatures);
-    process.send({ msg: "Address features created " });
-    return "created";
+    return `Address features created: ${addressFeatures.length}`;
   }
   return "No features to created";
 };
@@ -188,13 +185,16 @@ const createFeatures = (
   transactionsOutputsKeyed,
   isScam
 ) => {
-  const fullAddresses = map(addresses, ({ id, hash }) => ({
+  let fullAddresses = map(addresses, ({ id, hash }) => ({
     id,
     hash,
     transactionsInput: transactionsInputsKeyed[id] || [],
     transactionsOutput: transactionsOutputsKeyed[id] || []
   }));
-
+  fullAddresses = filter(
+    fullAddresses,
+    addr => addr.transactionsInput.length || addr.transactionsOutput.length
+  );
   return map(fullAddresses, address => getFeatureSet(address, isScam));
 };
 

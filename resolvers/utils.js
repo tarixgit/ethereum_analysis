@@ -1,4 +1,4 @@
-const { map, uniq, groupBy, keyBy, sortBy } = require("lodash");
+const { filter, map, uniq, groupBy, keyBy, sortBy } = require("lodash");
 const { getFeatureSet, getFeatureSetUpdate } = require("./buildFeaturesThread");
 const models = require("../models/index");
 
@@ -78,13 +78,16 @@ module.exports = {
     });
     const transactionsInputsKeyed = groupBy(transactionsInputs, "to");
     const transactionsOutputsKeyed = groupBy(transactionsOutputs, "from");
-    const fullAddresses = map(addresses, ({ id, hash }) => ({
+    let fullAddresses = map(addresses, ({ id, hash }) => ({
       id,
       hash,
       transactionsInput: transactionsInputsKeyed[id] || [],
       transactionsOutput: transactionsOutputsKeyed[id] || []
     }));
-
+    fullAddresses = filter(
+      fullAddresses,
+      addr => addr.transactionsInput.length || addr.transactionsOutput.length
+    );
     const addressFeatures = map(fullAddresses, address =>
       getFeatureSet(address, isScam)
     );
