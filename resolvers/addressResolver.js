@@ -23,14 +23,14 @@ module.exports = {
   Mutation: {
     findNeighborsScamThread: async (
       parent,
-      { address, limit: lim },
+      { address, level },
       { db },
       info
     ) => {
       const firstAddress = await db.address.findOne({
         where: { hash: address }
       });
-      const maxDepth = 3;
+      const maxDepth = level || 3;
       const checkedAddress = [firstAddress.id];
       const childrensArr = [[firstAddress.id]];
 
