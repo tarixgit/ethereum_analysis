@@ -1,4 +1,4 @@
-const pubsub = require("./pubsub");
+const { pubsub } = require("./pubsub");
 const {
   filter,
   forEach,

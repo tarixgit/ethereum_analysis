@@ -1,4 +1,4 @@
-const pubsub = require("./pubsub");
+const { pubsub } = require("./pubsub");
 const { map, take, isArray, isEmpty } = require("lodash");
 const { fork } = require("child_process");
 const path = require("path");
