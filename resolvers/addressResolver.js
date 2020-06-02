@@ -1,5 +1,5 @@
 const pubsub = require("./pubsub");
-const { map, take, isArray } = require("lodash");
+const { map, take, isArray, isEmpty } = require("lodash");
 const { fork } = require("child_process");
 const path = require("path");
 const { findScammer } = require("./utils/utils");
@@ -45,8 +45,10 @@ module.exports = {
           : {}
       );
       forked.on("message", async ({ foundPath, msg = null }) => {
-        addLog("searchNeighborScamThread", msg);
-        pubsub.publish(MESSAGE, { messageNotify: { message: msg } });
+        if (!isEmpty(msg)) {
+          addLog("searchNeighborScamThread", msg);
+          pubsub.publish(MESSAGE, { messageNotify: { message: msg } });
+        }
         if (foundPath && isArray(foundPath)) {
           const addressesPath = await db.address.findAll({
             where: { id: foundPath }

@@ -18,11 +18,11 @@ process.on("message", x => {
 async function findScammers(childrensArr, maxDepth, checkedAddress) {
   try {
     await addLog(
-      "buildFeaturesThread",
+      "searchNeighborScamThread",
       `Started thread for searching scam neighbors with maxDepth ${maxDepth}`
     );
     await addLog(
-      "buildFeaturesThread",
+      "searchNeighborScamThread",
       `Recieved the number of adresses: ${childrensArr.length}`
     );
     const foundPath = await findScammer(
@@ -38,6 +38,9 @@ async function findScammers(childrensArr, maxDepth, checkedAddress) {
     process.send({
       msg: `Error from child ${err} \n` + err.stack ? err.stack : ""
     });
+    if (String(err).indexOf("Maximal level of") > -1) {
+      process.exit(0);
+    }
     process.exit(1);
   }
 }

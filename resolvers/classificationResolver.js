@@ -6,7 +6,8 @@ const {
   map,
   differenceBy,
   uniqBy,
-  concat
+  concat,
+  isEmpty
 } = require("lodash");
 const rp = require("request-promise");
 const { fork } = require("child_process");
@@ -209,8 +210,10 @@ const startThreadCalc = async isRecalc => {
       : {}
   );
   forked.on("message", ({ msg = null }) => {
-    addLog("buildFeaturesThread", msg); // no needed await
-    pubsub.publish(MESSAGE, { messageNotify: { message: msg } });
+    if (!isEmpty(msg)) {
+      addLog("buildFeaturesThread", msg); // no needed await
+      pubsub.publish(MESSAGE, { messageNotify: { message: msg } });
+    }
   });
   forked.on("exit", async status => {
     await addLog(
