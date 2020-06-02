@@ -9,15 +9,31 @@ const {
   differenceBy,
   meanBy,
   concat,
-  compact
+  compact,
+  sortBy
 } = require("lodash");
-const { getCounters, median, addLog } = require("./utils");
+const { addLog } = require("./utils");
 const models = require("../models/index");
 
 process.on("message", x => {
   const { isRecalc } = x;
   return buildFeaturesMain(isRecalc);
 });
+
+const getCounters = (inputCounters, outputCounters, index) =>
+  inputCounters[index] || 0 + outputCounters[index] || 0;
+
+const median = (array, field = "") => {
+  array = sortBy(array, field);
+  if (!array.length) return 0;
+  if (array.length % 2 === 0) {
+    return (
+      (array[array.length / 2][field] + array[array.length / 2 - 1][field]) / 2
+    );
+  } else {
+    return array[(array.length - 1) / 2][field]; // array with odd number elements
+  }
+};
 
 async function buildFeaturesMain(isRecalc) {
   try {

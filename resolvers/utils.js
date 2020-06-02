@@ -1,9 +1,6 @@
-const { filter, map, uniq, groupBy, keyBy, sortBy } = require("lodash");
+const { filter, map, uniq, groupBy, keyBy } = require("lodash");
 const { getFeatureSet, getFeatureSetUpdate } = require("./buildFeaturesThread");
 const models = require("../models/index");
-
-const getCounters = (inputCounters, outputCounters, index) =>
-  inputCounters[index] || 0 + outputCounters[index] || 0;
 
 /**
  * 0 - none,
@@ -17,18 +14,6 @@ const getCounters = (inputCounters, outputCounters, index) =>
  * 4 - Trace,
  * 9 - Genesis
  * **/
-
-const median = (array, field = "") => {
-  array = sortBy(array, field);
-  if (!array.length) return 0;
-  if (array.length % 2 === 0) {
-    return (
-      (array[array.length / 2][field] + array[array.length / 2 - 1][field]) / 2
-    );
-  } else {
-    return array[(array.length - 1) / 2][field]; // array with odd number elements
-  }
-};
 
 module.exports = {
   buildFeatureForAddresses: async (db, importAddresses, isScam) => {
@@ -146,7 +131,5 @@ module.exports = {
   addLog: async (name, description) => {
     console.log(`${name}: ${description}`);
     return models.log.create({ name, description });
-  },
-  getCounters,
-  median
+  }
 };
