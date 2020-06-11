@@ -54,11 +54,20 @@ module.exports = {
             where: { id: foundPath }
           });
           const answer = {
-            nodes: map(addressesPath, ({ id, hash, labelId }) => ({
-              id,
-              label: hash,
-              group: labelId
-            })),
+            nodes: map(addressesPath, ({ id, hash, labelId, scam }) =>
+              scam
+                ? {
+                    id,
+                    label: hash,
+                    group: labelId,
+                    shape: "star"
+                  }
+                : {
+                    id,
+                    label: hash,
+                    group: labelId
+                  }
+            ),
             edges: map(take(foundPath, foundPath.length - 1), (id, index) => ({
               from: id,
               to: foundPath[index + 1]

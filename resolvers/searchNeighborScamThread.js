@@ -88,7 +88,6 @@ const findScammer = async (parentArr, db, maxDepth, checkedAddress) => {
   const foundScamAddress = find(addresses, ({ scam }) => scam);
   process.send({ msg: `Checking of level number ${maxDepth} is done` });
   if (foundScamAddress) {
-    console.log(foundScamAddress);
     const pathToScam = find(
       newChildrenArray,
       path => path[path.length - 1] === foundScamAddress.addressId

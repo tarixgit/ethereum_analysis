@@ -110,6 +110,7 @@ module.exports = `
    id: Int!, 
    label: String, 
    group: Int!, 
+   shape: String
   }
   type Edge {
    from: Int,
