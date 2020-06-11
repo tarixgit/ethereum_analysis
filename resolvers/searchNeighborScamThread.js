@@ -23,7 +23,7 @@ async function findScammers(childrensArr, maxDepth, checkedAddress) {
     );
     await addLog(
       "searchNeighborScamThread",
-      `Recieved the number of adresses: ${childrensArr.length}`
+      `Recieved the number of path: ${childrensArr.length}`
     );
     const foundPath = await findScammer(
       childrensArr,
