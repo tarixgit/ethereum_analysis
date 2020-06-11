@@ -138,9 +138,9 @@ module.exports = {
 
     return addressFeaturesUpdated;
   },
-  addLog: async (name, description) => {
+  addLog: async (name, description, data) => {
     console.log(`${name}: ${description}`);
-    return models.log.create({ name, description });
+    return models.log.create({ name, description, data });
   }
 };
 

@@ -126,6 +126,7 @@ module.exports = `
     name: String
     description: String
     createdAt: String
+    data: Graph
   }
   type ImportAddressesWCount {
     rows: [ImportAddress!]!

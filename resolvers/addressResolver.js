@@ -54,17 +54,17 @@ module.exports = {
             where: { id: foundPath }
           });
           const answer = {
-            nodes: map(addressesPath, ({ id, hash, labelId, scam }) =>
+            nodes: map(addressesPath, ({ id, hash, labelId, scam, alias }) =>
               scam
                 ? {
                     id,
-                    label: hash,
+                    label: alias || hash,
                     group: labelId,
                     shape: "star"
                   }
                 : {
                     id,
-                    label: hash,
+                    label: alias || hash,
                     group: labelId
                   }
             ),
@@ -73,6 +73,7 @@ module.exports = {
               to: foundPath[index + 1]
             }))
           };
+          addLog("searchNeighborScamThread", "Recieved result", answer);
           pubsub.publish(FOUND_NEIGHBOR, { neighborsScamFounded: answer });
         }
       });

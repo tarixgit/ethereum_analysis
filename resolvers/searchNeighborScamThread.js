@@ -19,7 +19,7 @@ async function findScammers(childrensArr, maxDepth, checkedAddress) {
   try {
     await addLog(
       "searchNeighborScamThread",
-      `Started thread for searching scam neighbors with maxDepth ${maxDepth}`
+      `Started thread for searching scam neighbors for ${childrensArr[0]} with maxDepth ${maxDepth}`
     );
     await addLog(
       "searchNeighborScamThread",
