@@ -1,5 +1,5 @@
 const { pubsub } = require("./pubsub");
-const { map, take, isArray, isEmpty } = require("lodash");
+const { flatten, map, take, isArray, isEmpty } = require("lodash");
 const { fork } = require("child_process");
 const path = require("path");
 const { findScammer } = require("./utils/utils");
@@ -44,34 +44,40 @@ module.exports = {
             }
           : {}
       );
-      forked.on("message", async ({ foundPath, msg = null }) => {
+      forked.on("message", async ({ foundPaths, msg = null }) => {
         if (!isEmpty(msg)) {
           addLog("searchNeighborScamThread", msg);
           pubsub.publish(MESSAGE, { messageNotify: { message: msg } });
         }
-        if (foundPath && isArray(foundPath)) {
-          const addressesPath = await db.address.findAll({
-            where: { id: foundPath }
+        if (foundPaths && isArray(foundPaths) && isArray(foundPaths[0])) {
+          const addressesFromPaths = await db.address.findAll({
+            where: { id: flatten(foundPaths) }
           });
           const answer = {
-            nodes: map(addressesPath, ({ id, hash, labelId, scam, alias }) =>
-              scam
-                ? {
-                    id,
-                    label: alias || hash,
-                    group: labelId,
-                    shape: "star"
-                  }
-                : {
-                    id,
-                    label: alias || hash,
-                    group: labelId
-                  }
+            nodes: map(
+              addressesFromPaths,
+              ({ id, hash, labelId, scam, alias }) =>
+                scam
+                  ? {
+                      id,
+                      label: alias || hash,
+                      group: labelId,
+                      shape: "star"
+                    }
+                  : {
+                      id,
+                      label: alias || hash,
+                      group: labelId
+                    }
             ),
-            edges: map(take(foundPath, foundPath.length - 1), (id, index) => ({
-              from: id,
-              to: foundPath[index + 1]
-            }))
+            edges: flatten(
+              map(foundPaths, path =>
+                map(take(path, path.length - 1), (id, index) => ({
+                  from: id,
+                  to: path[index + 1]
+                }))
+              )
+            )
           };
           addLog("searchNeighborScamThread", "Recieved result", answer);
           pubsub.publish(FOUND_NEIGHBOR, { neighborsScamFounded: answer });

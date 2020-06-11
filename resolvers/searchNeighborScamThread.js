@@ -3,7 +3,7 @@ const { addLog } = require("./utils");
 const {
   groupBy,
   differenceWith,
-  find,
+  intersectionWith,
   flatMap,
   map,
   uniqBy
@@ -25,13 +25,13 @@ async function findScammers(childrensArr, maxDepth, checkedAddress) {
       "searchNeighborScamThread",
       `Recieved the number of path: ${childrensArr.length}`
     );
-    const foundPath = await findScammer(
+    const foundPaths = await findScammer(
       childrensArr,
       models,
       maxDepth,
       checkedAddress
     );
-    process.send({ foundPath });
+    process.send({ foundPaths });
     process.exit(0);
   } catch (err) {
     process.send({ msg: err });
@@ -81,21 +81,22 @@ const findScammer = async (parentArr, db, maxDepth, checkedAddress) => {
   // const newAddress = difference(ids, checkedAddress); // todo you can output the addresses
   // checkedAddress = checkedAddress.concat(newAddress);
 
-  const addresses = await db.address_feature.findAll({
+  const foundScamAddress = await db.address_feature.findAll({
     attributes: ["id", "addressId", "scam"],
-    where: { addressId: childrensIds }
+    where: { addressId: childrensIds, scam: true }
   });
-  const foundScamAddress = find(addresses, ({ scam }) => scam);
   process.send({ msg: `Checking of level number ${maxDepth} is done` });
-  if (foundScamAddress) {
-    const pathToScam = find(
+  if (foundScamAddress.length) {
+    const pathsToScam = intersectionWith(
       newChildrenArray,
-      path => path[path.length - 1] === foundScamAddress.addressId
+      foundScamAddress,
+      (valuePath, valueAdd) =>
+        valuePath[valuePath.length - 1] === valueAdd.addressId
     );
     process.send({
       msg: `Found the scam address in neighbors. Checked ${checkedAddress.length} addresses.`
     });
-    return pathToScam;
+    return pathsToScam;
   } else {
     return findScammer(newChildrenArray, db, maxDepth - 1, checkedAddress);
   }
