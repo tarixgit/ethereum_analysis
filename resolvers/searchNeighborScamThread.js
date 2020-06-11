@@ -19,7 +19,7 @@ async function findScammers(childrensArr, maxDepth, checkedAddress) {
   try {
     await addLog(
       "searchNeighborScamThread",
-      `Started thread for searching scam neighbors for ${childrensArr[0]} with maxDepth ${maxDepth}`
+      `Started thread for searching scam neighbors with maxDepth ${maxDepth}`
     );
     await addLog(
       "searchNeighborScamThread",
@@ -92,7 +92,9 @@ const findScammer = async (parentArr, db, maxDepth, checkedAddress) => {
       newChildrenArray,
       path => path[path.length - 1] === foundScamAddress.addressId
     );
-    process.send({ msg: `Found the scam address in neighbors` });
+    process.send({
+      msg: `Found the scam address in neighbors. Checked ${checkedAddress.length} addresses.`
+    });
     return pathToScam;
   } else {
     return findScammer(newChildrenArray, db, maxDepth - 1, checkedAddress);

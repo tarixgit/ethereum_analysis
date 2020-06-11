@@ -97,6 +97,7 @@ module.exports = {
         }
       });
       await addLog("searchNeighborScamThread", `child pid: ${forked.pid}`);
+      await addLog("searchNeighborScamThread", `Address: ${address}`);
       forked.send({
         childrensArr,
         maxDepth,
