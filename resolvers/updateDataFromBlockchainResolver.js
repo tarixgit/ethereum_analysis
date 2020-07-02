@@ -58,7 +58,7 @@ module.exports = {
               const trans = await web3.eth.getTransactionReceipt(hash);
               // sumOfReward = sumOfReward + trans.cumulativeGasUsed * gasPrice;
               if (parseInt(input, 16) > 0) {
-                if (!trans.status) {
+                if (!trans.status && to) {
                   addressToFind.push({
                     hash: to.toLowerCase(),
                     labelId: NONE_LABEL
@@ -149,11 +149,14 @@ module.exports = {
             await db.transaction.bulkCreate(transactionToWrite, {
               transaction: t
             });
+            await t.commit();
             maxBlockNumberInDB += 1;
           } catch (error) {
             // If the execution reaches this line, an error was thrown.
             // We rollback the transaction.
             await t.rollback();
+            console.log(error);
+            break;
           }
         }
         return {
