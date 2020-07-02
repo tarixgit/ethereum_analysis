@@ -4,7 +4,11 @@ module.exports = function(sequelize, DataTypes) {
   const address = sequelize.define(
     "address",
     {
-      hash: DataTypes.STRING,
+      hash: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true
+      },
       alias: DataTypes.STRING,
       degree: DataTypes.INTEGER,
       outdegree: DataTypes.INTEGER,

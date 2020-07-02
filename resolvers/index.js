@@ -7,6 +7,7 @@ const importAddressResolver = require("./importAddressResolver");
 const addressFeatures = require("./addressFeatures");
 const transactionFeatures = require("./transactionFeatures");
 const logsResolver = require("./logsResolver");
+const updateDataFromBlockchainResolver = require("./updateDataFromBlockchainResolver");
 
 module.exports = merge(
   mainResolver,
@@ -16,5 +17,6 @@ module.exports = merge(
   importAddressResolver,
   addressFeatures,
   transactionFeatures,
-  logsResolver
+  logsResolver,
+  updateDataFromBlockchainResolver
 );

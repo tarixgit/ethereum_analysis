@@ -175,6 +175,7 @@ module.exports = `
     recalcFeatures: GeneralResponse!
     buildFeaturesThread: GeneralResponse!
     recalcFeaturesThread: GeneralResponse!
+    updateDataFromBlockchain: GeneralResponse!
     login(email: String): String # login token
   }
   type GeneralResponse {
