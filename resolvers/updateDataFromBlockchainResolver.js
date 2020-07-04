@@ -15,7 +15,7 @@ const ERC721 = 8;
 //   /--debug|--inspect/.test(process.execArgv.join(" "));
 // const MESSAGE = "message";
 
-const options = "ws://192.168.0.140:8546";
+const options = "ws://127.0.0.1:8546";
 
 const web3 = new Web3(Web3.givenProvider || options);
 
