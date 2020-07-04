@@ -1,5 +1,12 @@
 const { pubsub } = require("./pubsub");
-const { keyBy, uniqBy, map, differenceBy, compact } = require("lodash");
+const {
+  keyBy,
+  uniqBy,
+  map,
+  differenceBy,
+  compact,
+  forEach
+} = require("lodash");
 const Web3 = require("web3");
 const NONE_LABEL = 0;
 const MINER_LABEL = 1;
@@ -33,21 +40,23 @@ module.exports = {
           try {
             // let sumOfReward = 0;
             const block = await web3.eth.getBlock(maxBlockNumberInDB);
-            const { miner, timestamp, number } = block;
+            const { miner, timestamp, number, transactions: transHash } = block;
             const minerAddress = await db.address.findOrCreate({
               where: { hash: miner.toLowerCase() },
               default: { hash: miner.toLowerCase(), labelId: MINER_LABEL },
               transaction: t
             });
-
-            const transHash = block.transactions;
-            const transInBlockPromise = map(transHash, hash =>
-              web3.eth.getTransaction(hash)
-            );
-            const transInBlock = await Promise.all(transInBlockPromise);
-
+            let transInBlock = null;
+            const batch = new web3.eth.BatchRequest();
+            if (transHash.length > 0) {
+              forEach(transHash, hash => {
+                batch.add(web3.eth.getTransaction.request(hash));
+              });
+              transInBlock = await batch.execute();
+            }
+            transInBlock = transInBlock ? transInBlock.response : [];
             let addressToFind = [];
-            let addressToCreate = [];
+            // let addressToCreate = [];
             for (let i = 0; i < transInBlock.length; i++) {
               const { to, input, from, hash } = transInBlock[i];
               addressToFind.push({
@@ -55,9 +64,10 @@ module.exports = {
                 labelId: NONE_LABEL
               }); // to find
               // if realy need, now onlye for reward clac, can be put in if
-              const trans = await web3.eth.getTransactionReceipt(hash);
               // sumOfReward = sumOfReward + trans.cumulativeGasUsed * gasPrice;
               if (parseInt(input, 16) > 0) {
+                // todo maybe check only the :to: === null
+                const trans = await web3.eth.getTransactionReceipt(hash);
                 if (!trans.status && to) {
                   addressToFind.push({
                     hash: to.toLowerCase(),
@@ -68,7 +78,12 @@ module.exports = {
                 if (!to) {
                   // contract creation
                   const address = trans.contractAddress;
-                  addressToCreate.push({
+                  // because some Token address was imported already in different way
+                  // addressToCreate.push({
+                  //   hash: address.toLowerCase(),
+                  //   labelId: SMARTCONTRACT_LABEL
+                  // });
+                  addressToFind.push({
                     hash: address.toLowerCase(),
                     labelId: SMARTCONTRACT_LABEL
                   });
@@ -80,7 +95,7 @@ module.exports = {
                     web3.utils.isAddress(data) ? removeNullFromHex(data) : null
                   );
                   addresses = compact(addresses);
-                  addressToCreate = addressToCreate.concat(
+                  addressToFind = addressToFind.concat(
                     map(addresses, hash => ({
                       hash,
                       labelId: SMARTCONTRACT_LABEL
@@ -111,10 +126,9 @@ module.exports = {
               allAddressInDB,
               "hash"
             );
-
             // create contract addresses with missed address
             const missedAddress = await db.address.bulkCreate(
-              addressToCreate.concat(allAddressNotInDb),
+              allAddressNotInDb,
               { transaction: t }
             );
             allAddressInDB = allAddressInDB.concat(missedAddress);
