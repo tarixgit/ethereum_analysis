@@ -1,4 +1,4 @@
-const { pubsub } = require("./pubsub");
+// const { pubsub } = require("./pubsub");
 const {
   keyBy,
   uniqBy,
@@ -7,24 +7,28 @@ const {
   compact,
   forEach
 } = require("lodash");
+const dotenv = require("dotenv");
+const result = dotenv.config();
+
+if (result.error) {
+  throw result.error;
+}
 const Web3 = require("web3");
 const NONE_LABEL = 0;
 const MINER_LABEL = 1;
 const SMARTCONTRACT_LABEL = 2;
-const ONETIME_LABEL = 3;
-const TRACE = 4;
-const POOL_MEMBER = 5;
-const STOCK = 6;
-const ERC20 = 7;
-const ERC721 = 8;
+// const ONETIME_LABEL = 3;
+// const TRACE = 4;
+// const POOL_MEMBER = 5;
+// const STOCK = 6;
+// const ERC20 = 7;
+// const ERC721 = 8;
 // const debugMode =
 //   typeof v8debug === "object" ||
 //   /--debug|--inspect/.test(process.execArgv.join(" "));
 // const MESSAGE = "message";
 
-const options = "ws://127.0.0.1:8546";
-
-const web3 = new Web3(Web3.givenProvider || options);
+const web3 = new Web3(Web3.givenProvider || process.env.WEB3CONNECT);
 
 module.exports = {
   Mutation: {
