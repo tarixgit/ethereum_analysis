@@ -28,14 +28,13 @@ const SMARTCONTRACT_LABEL = 2;
 //   /--debug|--inspect/.test(process.execArgv.join(" "));
 // const MESSAGE = "message";
 
-const web3 = new Web3(Web3.givenProvider || process.env.WEB3CONNECT);
-
 module.exports = {
   Mutation: {
     /**
      * */
     updateDataFromBlockchain: async (parent, data, { db }, info) => {
       try {
+        const web3 = new Web3(Web3.givenProvider || process.env.WEB3CONNECT);
         let maxBlockNumberInDB = await db.block.max("id");
         maxBlockNumberInDB = maxBlockNumberInDB + 1;
         const actualBlockNumber = await web3.eth.getBlockNumber();
