@@ -20,7 +20,7 @@ module.exports = {
   },
   Mutation: {
     addAddressToImport: async (parent, { address }, { db }, info) => {
-      await db.importAddress.findOrCreate({ where: { hash: address.hash }, defaults: address });
+      await db.import_address.findOrCreate({ where: { hash: address.hash }, defaults: address });
       return {
         success: true,
         message: "Address added"
