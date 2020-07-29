@@ -5,9 +5,7 @@ const path = require("path");
 const { findScammer } = require("./utils/utils");
 const { addLog } = require("./utils");
 
-const debugMode =
-  typeof v8debug === "object" ||
-  /--debug|--inspect/.test(process.execArgv.join(" "));
+const debugMode = typeof v8debug === "object" || /--debug|--inspect/.test(process.execArgv.join(" "));
 const FOUND_NEIGHBOR = "foundNeighborStr";
 const MESSAGE = "message";
 
@@ -21,12 +19,14 @@ module.exports = {
     }
   },
   Mutation: {
-    findNeighborsScamThread: async (
-      parent,
-      { address, level },
-      { db },
-      info
-    ) => {
+    addAddressToImport: async (parent, { address }, { db }, info) => {
+      await db.importAddress.findOrCreate({ where: { hash: address.hash }, defaults: address });
+      return {
+        success: true,
+        message: "Address added"
+      };
+    },
+    findNeighborsScamThread: async (parent, { address, level }, { db }, info) => {
       const firstAddress = await db.address.findOne({
         where: { hash: address }
       });
@@ -45,6 +45,7 @@ module.exports = {
           : {}
       );
       forked.on("message", async ({ foundPaths, msg = null }) => {
+        console.log(foundPaths);
         if (!isEmpty(msg)) {
           addLog("searchNeighborScamThread", msg);
           pubsub.publish(MESSAGE, { messageNotify: { message: msg } });
@@ -54,21 +55,19 @@ module.exports = {
             where: { id: flatten(foundPaths) }
           });
           const answer = {
-            nodes: map(
-              addressesFromPaths,
-              ({ id, hash, labelId, scam, alias }) =>
-                scam
-                  ? {
-                      id,
-                      label: alias || hash,
-                      group: labelId,
-                      shape: "star"
-                    }
-                  : {
-                      id,
-                      label: alias || hash,
-                      group: labelId
-                    }
+            nodes: map(addressesFromPaths, ({ id, hash, labelId, scam, alias }) =>
+              scam
+                ? {
+                    id,
+                    label: alias || hash,
+                    group: labelId,
+                    shape: "star"
+                  }
+                : {
+                    id,
+                    label: alias || hash,
+                    group: labelId
+                  }
             ),
             edges: flatten(
               map(foundPaths, path =>
@@ -84,10 +83,7 @@ module.exports = {
         }
       });
       forked.on("exit", async status => {
-        await addLog(
-          "searchNeighborScamThread",
-          `Searching process in thread stopped with code: ${status}`
-        );
+        await addLog("searchNeighborScamThread", `Searching process in thread stopped with code: ${status}`);
         if (status) {
           pubsub.publish(MESSAGE, {
             messageNotify: {
@@ -117,12 +113,7 @@ module.exports = {
   },
   Query: {
     // TODO not used!!!
-    findNeighborsScam: async (
-      parent,
-      { address, limit: lim },
-      { db },
-      info
-    ) => {
+    findNeighborsScam: async (parent, { address, limit: lim }, { db }, info) => {
       const firstAddress = await db.address.findOne({
         where: { hash: address }
       });
@@ -140,12 +131,7 @@ module.exports = {
       // childrensArr is array of all possible path
       const childrensArr = [[firstAddress.id]];
       pubsub.publish(MESSAGE, { messageNotify: { message: "Started" } });
-      const foundPath = await findScammer(
-        childrensArr,
-        db,
-        maxDepth,
-        checkedAddress
-      );
+      const foundPath = await findScammer(childrensArr, db, maxDepth, checkedAddress);
       // do return,
       // todo make async fuction, aber ohne await
       let answer = {};

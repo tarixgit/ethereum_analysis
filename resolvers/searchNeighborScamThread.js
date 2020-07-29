@@ -1,13 +1,6 @@
 const { addLog } = require("./utils");
 
-const {
-  groupBy,
-  differenceWith,
-  intersectionWith,
-  flatMap,
-  map,
-  uniqBy
-} = require("lodash");
+const { groupBy, differenceWith, intersectionWith, flatMap, map, uniqBy } = require("lodash");
 const models = require("../models/index");
 
 process.on("message", x => {
@@ -17,21 +10,11 @@ process.on("message", x => {
 
 async function findScammers(childrensArr, maxDepth, checkedAddress) {
   try {
-    await addLog(
-      "searchNeighborScamThread",
-      `Started thread for searching scam neighbors with maxDepth ${maxDepth}`
-    );
-    await addLog(
-      "searchNeighborScamThread",
-      `Recieved the number of path: ${childrensArr.length}`
-    );
-    const foundPaths = await findScammer(
-      childrensArr,
-      models,
-      maxDepth,
-      checkedAddress
-    );
+    await addLog("searchNeighborScamThread", `Started thread for searching scam neighbors with maxDepth ${maxDepth}`);
+    await addLog("searchNeighborScamThread", `Recieved the number of path: ${childrensArr.length}`);
+    const foundPaths = await findScammer(childrensArr, models, maxDepth, checkedAddress);
     process.send({ foundPaths });
+    console.log(foundPaths);
     process.exit(0);
   } catch (err) {
     process.send({ msg: err });
@@ -61,11 +44,7 @@ const findScammer = async (parentArr, db, maxDepth, checkedAddress) => {
   });
 
   // remove cricles
-  const transFiltered = differenceWith(
-    trans,
-    checkedAddress,
-    (valueNew, valueOld) => valueNew.to === valueOld
-  );
+  const transFiltered = differenceWith(trans, checkedAddress, (valueNew, valueOld) => valueNew.to === valueOld);
 
   // build paths
   const transGrouped = groupBy(transFiltered, "from");
@@ -90,8 +69,7 @@ const findScammer = async (parentArr, db, maxDepth, checkedAddress) => {
     const pathsToScam = intersectionWith(
       newChildrenArray,
       foundScamAddress,
-      (valuePath, valueAdd) =>
-        valuePath[valuePath.length - 1] === valueAdd.addressId
+      (valuePath, valueAdd) => valuePath[valuePath.length - 1] === valueAdd.addressId
     );
     process.send({
       msg: `Found the scam address in neighbors. Checked ${checkedAddress.length} addresses.`

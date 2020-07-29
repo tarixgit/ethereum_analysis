@@ -1,31 +1,17 @@
 const { pubsub } = require("./pubsub");
-const {
-  filter,
-  forEach,
-  flatMap,
-  map,
-  differenceBy,
-  uniqBy,
-  concat,
-  isEmpty
-} = require("lodash");
+const { filter, forEach, flatMap, map, differenceBy, uniqBy, concat, isEmpty } = require("lodash");
 const rp = require("request-promise");
 const { fork } = require("child_process");
 const path = require("path");
 
-const {
-  buildFeatureForAddresses,
-  updateFeatureForAdresses,
-  addLog
-} = require("./utils");
+const { buildFeatureForAddresses, updateFeatureForAdresses, addLog } = require("./utils");
 
-const debugMode =
-  typeof v8debug === "object" ||
-  /--debug|--inspect/.test(process.execArgv.join(" "));
+const debugMode = typeof v8debug === "object" || /--debug|--inspect/.test(process.execArgv.join(" "));
 const MESSAGE = "message";
 
 const options = {
-  uri: "https://etherscamdb.info/api/scams/",
+  uri: "http://etherscamdb.info/api/scams/",
+  //  uri: "https://etherscamdb.info/api/scams/", https ist jetzt offline :(
   headers: {
     "User-Agent": "Request-Promise"
   },
@@ -43,23 +29,11 @@ module.exports = {
 
         if (results.success) {
           // prepare data
-          const resultFiltered = filter(
-            results.result,
-            ({ addresses, coin }) => !!addresses && coin === "ETH"
-          );
+          const resultFiltered = filter(results.result, ({ addresses, coin }) => !!addresses && coin === "ETH");
           // prepare data
           let importAddresses = flatMap(
             resultFiltered,
-            ({
-              addresses,
-              name,
-              url,
-              coin,
-              category,
-              subcategory,
-              reporter,
-              status
-            }) =>
+            ({ addresses, name, url, coin, category, subcategory, reporter, status }) =>
               map(addresses, address => ({
                 hash: address,
                 name,
@@ -75,11 +49,7 @@ module.exports = {
           const addressesFromDB = await db.import_address.findAll({
             where: { hash: map(importAddresses, "hash") }
           });
-          importAddresses = differenceBy(
-            importAddresses,
-            addressesFromDB,
-            "hash"
-          );
+          importAddresses = differenceBy(importAddresses, addressesFromDB, "hash");
           importAddresses = uniqBy(importAddresses, "hash");
           if (importAddresses.length) {
             await db.import_address.bulkCreate(importAddresses);
@@ -110,34 +80,13 @@ module.exports = {
         const addressesAlreadyInDB = await db.address_feature.findAll({
           where: { hash: map(importAddresses, "hash") } // not perfect but must be fast
         });
-        const importAddressesNotInDB = differenceBy(
-          importAddresses,
-          addressesAlreadyInDB,
-          "hash"
-        );
-        const importScamAddressesNotInDB = filter(
-          importAddressesNotInDB,
-          "scam"
-        );
-        const importWhiteAddressesNotInDB = filter(
-          importAddressesNotInDB,
-          item => !item.scam
-        );
+        const importAddressesNotInDB = differenceBy(importAddresses, addressesAlreadyInDB, "hash");
+        const importScamAddressesNotInDB = filter(importAddressesNotInDB, "scam");
+        const importWhiteAddressesNotInDB = filter(importAddressesNotInDB, item => !item.scam);
 
-        const scamAddressFeatures = await buildFeatureForAddresses(
-          db,
-          importScamAddressesNotInDB,
-          true
-        );
-        const normalAddressFeatures = await buildFeatureForAddresses(
-          db,
-          importWhiteAddressesNotInDB,
-          false
-        );
-        const addressFeatures = concat(
-          scamAddressFeatures,
-          normalAddressFeatures
-        );
+        const scamAddressFeatures = await buildFeatureForAddresses(db, importScamAddressesNotInDB, true);
+        const normalAddressFeatures = await buildFeatureForAddresses(db, importWhiteAddressesNotInDB, false);
+        const addressFeatures = concat(scamAddressFeatures, normalAddressFeatures);
         if (addressFeatures.length) {
           await db.address_feature.bulkCreate(addressFeatures);
         }
@@ -159,18 +108,9 @@ module.exports = {
       const scamAddresses = filter(addresses, "scam");
       const whiteAddresses = filter(addresses, item => !item.scam);
 
-      const scamAddressFeatures = await updateFeatureForAdresses(
-        db,
-        scamAddresses
-      );
-      const normalAddressFeatures = await updateFeatureForAdresses(
-        db,
-        whiteAddresses
-      );
-      const addressFeatures = concat(
-        scamAddressFeatures,
-        normalAddressFeatures
-      );
+      const scamAddressFeatures = await updateFeatureForAdresses(db, scamAddresses);
+      const normalAddressFeatures = await updateFeatureForAdresses(db, whiteAddresses);
+      const addressFeatures = concat(scamAddressFeatures, normalAddressFeatures);
       if (addressFeatures.length) {
         forEach(addressFeatures, address => address.save());
       }
@@ -193,7 +133,7 @@ module.exports = {
       startThreadCalc(true);
       return {
         success: true,
-        message: "Calculation running"
+        message: "Calculation for all address are running"
       };
     }
   }
@@ -211,25 +151,22 @@ const startThreadCalc = async isRecalc => {
   );
   forked.on("message", ({ msg = null }) => {
     if (!isEmpty(msg)) {
-      addLog("buildFeaturesThread", msg); // no needed await
+      addLog(`buildFeaturesThread: ${forked.pid}`, msg); // no needed await
       pubsub.publish(MESSAGE, { messageNotify: { message: msg } });
     }
   });
   forked.on("exit", async status => {
-    await addLog(
-      "buildFeaturesThread",
-      `Feature calculation process in thread stopped with code: ${status}`
-    );
+    await addLog("buildFeaturesThread", `Feature calculation process in thread stopped with code: ${status}`);
     if (status) {
       pubsub.publish(MESSAGE, {
         messageNotify: {
-          message: "Error by features calc"
+          message: `Error by features calc`
         }
       });
     } else {
       pubsub.publish(MESSAGE, {
         messageNotify: {
-          message: "Features calculations ends successful"
+          message: `Features calculations ends successful`
         }
       });
     }

@@ -3,15 +3,9 @@ const { map } = require("lodash");
 
 module.exports = {
   Query: {
-    importAddress: (parent, { id }, { db }, info) =>
-      db.import_address.findByPk(id),
+    importAddress: (parent, { id }, { db }, info) => db.import_address.findByPk(id),
 
-    importAddresses: (
-      parent,
-      { orderBy, addresses = null, limit: lim, offset, ids = null },
-      { db },
-      info
-    ) => {
+    importAddresses: (parent, { orderBy, addresses = null, limit: lim, offset, ids = null }, { db }, info) => {
       const whereOr = [];
       let order = null;
       if (addresses) {

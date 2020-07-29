@@ -147,6 +147,17 @@ module.exports = `
       field: String
       type: String
   }
+  input ImportAddressInput {      
+      hash: String!,
+      name: String,
+      url: String,
+      coin: String,
+      category: String,
+      subcategory: String,
+      reporter: String,
+      status: String
+      scam: Boolean!,
+  }
   type Query {
     address(id: ID!): Address!
     addresses(limit: Int, address: String): [Address!]!
@@ -169,6 +180,7 @@ module.exports = `
     findNeighborsScam(address: String!, level: Int): Graph!
   }
   type Mutation {
+    addAddressToImport(address: ImportAddressInput!): GeneralResponse!
     findNeighborsScamThread(address: String!, level: Int): GeneralResponse!
     loadData: GeneralResponse!
     buildFeatures: GeneralResponse!
