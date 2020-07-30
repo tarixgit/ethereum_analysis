@@ -181,6 +181,7 @@ module.exports = `
   }
   type Mutation {
     addAddressToImport(address: ImportAddressInput!): GeneralResponse!
+    deleteAddressToImport(id: Int): GeneralResponse!
     findNeighborsScamThread(address: String!, level: Int): GeneralResponse!
     loadData: GeneralResponse!
     buildFeatures: GeneralResponse!

@@ -26,6 +26,13 @@ module.exports = {
         message: "Address added"
       };
     },
+    deleteAddressToImport: async (parent, { id }, { db }, info) => {
+      await db.import_address.destroy({ where: { id } });
+      return {
+        success: true,
+        message: "Address deleted"
+      };
+    },
     findNeighborsScamThread: async (parent, { address, level }, { db }, info) => {
       const firstAddress = await db.address.findOne({
         where: { hash: address }
