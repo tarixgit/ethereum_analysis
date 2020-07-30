@@ -46,7 +46,7 @@ module.exports = {
         //   type === 7
         //     ? "https://etherscan.io/accounts/label/exchange?subcatid=undefined&size=100&start=1&col=1&order=asc"
         //     : link;
-        let i = 2;
+        let i = 1;
         let importAddresses = [];
         do {
           importAddresses = [];
@@ -77,7 +77,7 @@ module.exports = {
                 name,
                 labelId: type,
                 symbol,
-                category: "ERC20"
+                category: type === 7 ? "ERC20" : "ERC721"
               };
             });
 
