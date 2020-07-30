@@ -1,12 +1,5 @@
 // const { pubsub } = require("./pubsub");
-const {
-  keyBy,
-  uniqBy,
-  map,
-  differenceBy,
-  compact,
-  forEach
-} = require("lodash");
+const { keyBy, uniqBy, map, differenceBy, compact, forEach } = require("lodash");
 const dotenv = require("dotenv");
 const result = dotenv.config();
 
@@ -124,31 +117,22 @@ module.exports = {
               add.hash = add.hash.toLowerCase();
               return add;
             });
-            const allAddressNotInDb = differenceBy(
-              addressToFind,
-              allAddressInDB,
-              "hash"
-            );
+            const allAddressNotInDb = differenceBy(addressToFind, allAddressInDB, "hash");
             // create contract addresses with missed address
-            const missedAddress = await db.address.bulkCreate(
-              allAddressNotInDb,
-              { transaction: t }
-            );
+            const missedAddress = await db.address.bulkCreate(allAddressNotInDb, { transaction: t });
             allAddressInDB = allAddressInDB.concat(missedAddress);
 
             const allAddressInDBKeyed = keyBy(allAddressInDB, "hash");
-            let transactionToWrite = map(
-              transInBlock,
-              ({ from, to, value, transactionIndex }) =>
-                to
-                  ? {
-                      bid: number,
-                      tid: transactionIndex,
-                      amount: web3.utils.fromWei(value),
-                      from: allAddressInDBKeyed[from.toLowerCase()].id,
-                      to: allAddressInDBKeyed[to.toLowerCase()].id
-                    }
-                  : null
+            let transactionToWrite = map(transInBlock, ({ from, to, value, transactionIndex }) =>
+              to
+                ? {
+                    bid: number,
+                    tid: transactionIndex,
+                    amount: web3.utils.fromWei(value),
+                    from: allAddressInDBKeyed[from.toLowerCase()].id,
+                    to: allAddressInDBKeyed[to.toLowerCase()].id
+                  }
+                : null
             );
             transactionToWrite = compact(transactionToWrite);
             // write in db

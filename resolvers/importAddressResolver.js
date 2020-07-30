@@ -1,15 +1,14 @@
 const { Op } = require("sequelize");
 const { map } = require("lodash");
-const rp = require("request-promise");
+const axios = require("axios");
 const HTMLParser = require("node-html-parser");
-const tough = require("tough-cookie");
 
-const options = {
-  uri: "https://etherscan.io/tokens?q=+&p=",
-  headers: {
-    "User-Agent": "Request-Promise"
-  }
-};
+// const options = {
+//   uri: "https://etherscan.io/tokens?q=+&p=",
+//   headers: {
+//     "User-Agent": "Request-Promise"
+//   }
+// };
 
 module.exports = {
   Query: {
@@ -39,53 +38,35 @@ module.exports = {
   Mutation: {
     /**
      * */
-    updateLabelFromEther: async (parent, data, { db }, info) => {
+    updateLabelFromEther: async (parent, { type }, { db }, info) => {
       try {
-        // const cookie = new tough.Cookie({
-        //   key: "__cfduid",
-        //   value: "db73ab738f8238e407662f1ae91bfe24d1596121678",
-        //   domain: ".etherscan.io",
-        //   httpOnly: true,
-        //   maxAge: 31536000
-        // });
-        // const cookie2 = new tough.Cookie({
-        //   key: "ASP.NET_SessionId",
-        //   value: "dus4upnckdheuzorlnrbiolu",
-        //   domain: ".etherscan.io",
-        //   httpOnly: true,
-        //   maxAge: 31536000
-        // });
-        // const cookiejar = new tough.CookieJar();
-        // cookiejar.setCookie(cookie, "https://etherscan.io");
-        const newOptions = options;
-        let i = 12;
+        let link = type === 7 ? "https://etherscan.io/tokens?q=+&ps=100&p=" : null;
+        link = type === 8 ? "https://etherscan.io/tokens-nft?q=+&ps=100&p=" : link;
+        // link =
+        //   type === 7
+        //     ? "https://etherscan.io/accounts/label/exchange?subcatid=undefined&size=100&start=1&col=1&order=asc"
+        //     : link;
+        let i = 2;
         let importAddresses = [];
         do {
           importAddresses = [];
+          const results = await axios.get(`${link}${i}`, {
+            // params: {
+            //   q: "+",
+            //   ps: 100,
+            //   p: i
+            // },
+            responseType: "document",
+            headers: {
+              "content-type":
+                "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+              cookie: "__cfduid=d9576c8dab355bb823ca66298c7ecc1161596125839; ASP.NET_SessionId=f1lt233x25iifhonohdmwdgz"
+            }
+          });
 
-          newOptions.uri = `${options.uri}${i}`;
-          newOptions.headers = {
-            "content-type":
-              "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-            // "accept-encoding": "gzip, deflate, br",
-            "accept-language": "en-US,en;q=0.9,ru;q=0.8,uk;q=0.7,de;q=0.6",
-            "cache-control": "no-cache",
-            cookie: "__cfduid=db73ab738f8238e407662f1ae91bfe24d1596121678; ASP.NET_SessionId=dus4upnckdheuzorlnrbiolu",
-            pragma: "no-cache",
-            "sec-fetch-dest": "document",
-            "sec-fetch-mode": "navigate",
-            "sec-fetch-site": "none",
-            "sec-fetch-user": "?1",
-            "upgrade-insecure-requests": 1,
-            "user-agent":
-              " Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36"
-          };
-          // newOptions.jar = cookiejar;
-          const results = await rp(newOptions);
-
-          if (results) {
+          if (results.data) {
             // prepare data
-            const root = HTMLParser.parse(results);
+            const root = HTMLParser.parse(results.data);
             const table = root.querySelectorAll("tbody tr");
             importAddresses = map(table, row => {
               const hash = row.querySelector("a").text;
@@ -94,7 +75,7 @@ module.exports = {
               return {
                 hash,
                 name,
-                labelId: 7,
+                labelId: type,
                 symbol,
                 category: "ERC20"
               };
@@ -103,7 +84,7 @@ module.exports = {
             if (importAddresses.length) {
               await db.import_address_label.bulkCreate(importAddresses);
             }
-            await sleep(1000 + 1000 * Math.trunc(Math.random() * 10));
+            await sleep(5000 + 1000 * Math.trunc(Math.random() * 10));
           }
           i = i + 1;
           console.log(i);

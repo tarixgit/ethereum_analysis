@@ -189,6 +189,7 @@ module.exports = `
     buildFeaturesThread: GeneralResponse!
     recalcFeaturesThread: GeneralResponse!
     updateDataFromBlockchain: GeneralResponse!
+    updateLabelFromEther(type: Int): GeneralResponse!
     login(email: String): String # login token
   }
   type GeneralResponse {
