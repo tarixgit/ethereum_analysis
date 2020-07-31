@@ -22,6 +22,18 @@ const SMARTCONTRACT_LABEL = 2;
 // const MESSAGE = "message";
 
 module.exports = {
+  Query: {
+    getUpdateState: async (parent, _, { db }, info) => {
+      const lastAddress = await db.address.max("id");
+      const lastBlock = await db.block.max("id");
+      const lastTransaction = await db.transaction.max("id");
+      return {
+        lastAddress,
+        lastBlock,
+        lastTransaction
+      };
+    }
+  },
   Mutation: {
     /**
      * */

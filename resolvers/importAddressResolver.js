@@ -67,11 +67,6 @@ module.exports = {
                 1}&col=1&order=asc`;
             }
             const results = await axios.get(link, {
-              // params: {
-              //   q: "+",
-              //   ps: 100,
-              //   p: i
-              // },
               responseType: "document",
               headers: {
                 "content-type":

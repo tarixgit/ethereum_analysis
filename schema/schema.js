@@ -140,6 +140,11 @@ module.exports = `
     rows: [Log]!
     count: Int
   }
+  type UpdateState {
+    lastAddress: Int!
+    lastBlock: Int!
+    lastTransaction: Int!
+  }
   type MessageNotify {
       message: String!
   }
@@ -178,6 +183,7 @@ module.exports = `
     getAndCalculateAddressFeatures(address: String!): AddressFeatureCalc!
     transactionFeatures: [TransactionFeature!]!
     findNeighborsScam(address: String!, level: Int): Graph!
+    getUpdateState: UpdateState!
   }
   type Mutation {
     addAddressToImport(address: ImportAddressInput!): GeneralResponse!
