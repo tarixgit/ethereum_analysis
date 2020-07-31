@@ -198,7 +198,8 @@ const updateLabel = async (label, db, from, to) => {
   // use imported address with label to set labels
   const allImportedLABEL = await db.import_address_label.findAll({ where: { labelId: label }, raw: true });
   const allImportedLABELIds = map(allImportedLABEL, "id");
-  let whereClause = [{ id: allImportedLABELIds }, { labelId: NONE }];
+  // let whereClause = [{ id: allImportedLABELIds }, { labelId: NONE }];
+  let whereClause = [{ id: allImportedLABELIds }];
   whereClause = insertFromTo(whereClause, from, to);
   await db.address.update(
     {
