@@ -1,5 +1,5 @@
 const { Op } = require("sequelize");
-const { map, groupBy, filter } = require("lodash");
+const { map, groupBy, filter, uniq, flatten } = require("lodash");
 const axios = require("axios");
 const HTMLParser = require("node-html-parser");
 const { pubsub } = require("./pubsub");
@@ -197,9 +197,9 @@ const insertFromTo = (whereClause, from, to) =>
 const updateLabel = async (label, db, from, to) => {
   // use imported address with label to set labels
   const allImportedLABEL = await db.import_address_label.findAll({ where: { labelId: label }, raw: true });
-  const allImportedLABELIds = map(allImportedLABEL, "id");
+  const allImportedLABELHahses = map(allImportedLABEL, "hash");
   // let whereClause = [{ id: allImportedLABELIds }, { labelId: NONE }];
-  let whereClause = [{ id: allImportedLABELIds }];
+  let whereClause = [{ hash: allImportedLABELHahses }];
   whereClause = insertFromTo(whereClause, from, to);
   await db.address.update(
     {
@@ -215,37 +215,39 @@ const updateMiner = async (db, fromAddId, toAddId) => {
   const allMinningPool = await db.address.findAll({
     where: { labelId: MINNING_POOL }, // 1
     raw: true
+    // limit: 2
   });
   const allMinningPoolIds = map(allMinningPool, "id");
 
-  const trans = db.transaction.findAll({
+  const trans = await db.transaction.findAll({
     attributes: ["id", "from", "to"],
-    include: [
-      {
-        model: db.address,
-        attributes: ["id"],
-        as: "toAddress",
-        where: {
-          labelId: NONE
-        },
-        separate: true,
-        limit: 1
-      }
-    ],
+    // you can use distinct, but is slow
+    // include: [
+    //   {
+    //     model: db.address,
+    //     attributes: ["id"],
+    //     as: "toAddress",
+    //     where: {
+    //       labelId: NONE
+    //     },
+    //     separate: true,
+    //     limit: 1
+    //   }
+    // ],
     raw: true,
     where: {
       from: allMinningPoolIds,
       to: toAddId === 0 ? { [Op.gte]: fromAddId } : { [Op.between]: [fromAddId, toAddId] }
-    },
-    limit: 2 // TODO for test, remove
+    }
+    // limit: 2
   });
 
-  const miners = map(trans, "to");
+  const miners = uniq(map(trans, "to"));
   await db.address.update(
     {
       labelId: MINER
     },
-    { where: { id: miners } }
+    { where: { id: miners, labelId: NONE } }
   );
 };
 
@@ -260,36 +262,37 @@ const updateOneTime = async (db, fromAddId, toAddId) => {
   const allNone = await db.address.findAll({
     where: { [Op.and]: where },
     raw: true
+    // limit: 7
   });
   const allNoneIds = map(allNone, "id");
 
   // TODO make batch for, cu the addressIds, this call!!!
-  let trans = db.transaction.findAll({
+  let trans = await db.transaction.findAll({
     attributes: ["id", "from", "to"],
     raw: true,
     where: {
       from: allNoneIds
       // to: toAddId === 0 ? { [Op.gte]: fromAddId } : { [Op.between]: [fromAddId, toAddId] } // not needed
-    },
-    limit: 2 // TODO for test, remove
+    }
+    // limit: 100
   });
 
   const transGrouped = groupBy(trans, "from");
-  const transGroupedOneOut = filter(transGrouped, trans => trans.length === 1); // only one outcome transaction
+  const transGroupedOneOut = flatten(filter(transGrouped, trans => trans.length === 1)); // only one outcome transaction
   const transGroupedOneOutIds = map(transGroupedOneOut, "from");
-  trans = db.transaction.findAll({
+  trans = await db.transaction.findAll({
     attributes: ["id", "from", "to"],
     raw: true,
     where: {
       to: transGroupedOneOutIds
-    },
-    limit: 2 // TODO for test, remove
+    }
+    // limit: 2
   });
 
   const transOneOutGrouped = groupBy(trans, "to");
-  const transGroupedOneOutIn = filter(transOneOutGrouped, trans => trans.length === 1); // only one outcome transaction
+  const transGroupedOneOutIn = flatten(filter(transOneOutGrouped, trans => trans.length === 1)); // only one outcome transaction
   const transGroupedOneOutInIds = map(transGroupedOneOutIn, "to");
-
+  console.log(transGroupedOneOutIn); // TODO temporal
   await db.address.update(
     {
       labelId: ONETIME
