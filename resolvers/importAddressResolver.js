@@ -2,6 +2,7 @@ const { Op } = require("sequelize");
 const { map, groupBy, filter, uniq, flatten } = require("lodash");
 const axios = require("axios");
 const HTMLParser = require("node-html-parser");
+const { addLog } = require("./utils");
 const { pubsub } = require("./pubsub");
 
 const MESSAGE = "message";
@@ -138,33 +139,38 @@ module.exports = {
     updateLabelsOnAddress: async (parent, { from, to }, { db }, info) => {
       // to === 0 mean all
       try {
-        await updateLabel(ERC20, db, from, to);
+        let x = await updateLabel(ERC20, db, from, to);
+        await addLog("updateLabelsOnAddress", `Updating ERC20 address done. Affected: ${x[0]} rows`);
         pubsub.publish(MESSAGE, {
           messageNotify: {
             message: `Updating ERC20 address done`
           }
         });
 
-        await updateLabel(ERC721, db, from, to);
+        x = await updateLabel(ERC721, db, from, to);
+        await addLog("updateLabelsOnAddress", `Updating ERC721 address done. Affected: ${x[0]} rows`);
         pubsub.publish(MESSAGE, {
           messageNotify: {
             message: `Updating ERC721 address done`
           }
         });
 
-        await updateLabel(EXCHANGE, db, from, to);
+        x = await updateLabel(EXCHANGE, db, from, to);
+        await addLog("updateLabelsOnAddress", `Updating Exchange address done. Affected: ${x[0]} rows`);
         pubsub.publish(MESSAGE, {
           messageNotify: {
             message: `Updating Exchange address done`
           }
         });
-        await updateMiner(db, from, to);
+        x = await updateMiner(db, from, to);
+        await addLog("updateLabelsOnAddress", `Updating Miner address done. Affected: ${x[0]} rows`);
         pubsub.publish(MESSAGE, {
           messageNotify: {
             message: `Updating Miner address done`
           }
         });
-        await updateOneTime(db, from, to);
+        x = await updateOneTime(db, from, to);
+        await addLog("updateLabelsOnAddress", `Updating OneTime address done. Affected: ${x[0]} rows`);
         pubsub.publish(MESSAGE, {
           messageNotify: {
             message: `Updating OneTime address done`
@@ -201,7 +207,7 @@ const updateLabel = async (label, db, from, to) => {
   // let whereClause = [{ id: allImportedLABELIds }, { labelId: NONE }];
   let whereClause = [{ hash: allImportedLABELHahses }];
   whereClause = insertFromTo(whereClause, from, to);
-  await db.address.update(
+  return db.address.update(
     {
       labelId: label
     },
@@ -243,7 +249,7 @@ const updateMiner = async (db, fromAddId, toAddId) => {
   });
 
   const miners = uniq(map(trans, "to"));
-  await db.address.update(
+  return db.address.update(
     {
       labelId: MINER
     },
@@ -293,7 +299,7 @@ const updateOneTime = async (db, fromAddId, toAddId) => {
   const transGroupedOneOutIn = flatten(filter(transOneOutGrouped, trans => trans.length === 1)); // only one outcome transaction
   const transGroupedOneOutInIds = map(transGroupedOneOutIn, "to");
   console.log(transGroupedOneOutIn); // TODO temporal
-  await db.address.update(
+  return db.address.update(
     {
       labelId: ONETIME
     },
