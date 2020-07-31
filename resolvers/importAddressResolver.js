@@ -40,7 +40,7 @@ module.exports = {
      * */
     updateLabelFromEther: async (parent, { type }, { db }, info) => {
       try {
-        let link = type === 7 ? "https://etherscan.io/tokens?q=+&ps=100&p=" : null;
+        let link = type === 7 ? "https://etherscan.io/tokens?q=a&ps=100&p=" : null;
         link = type === 8 ? "https://etherscan.io/tokens-nft?q=+&ps=100&p=" : link;
         // link =
         //   type === 7
@@ -82,9 +82,15 @@ module.exports = {
             });
 
             if (importAddresses.length) {
-              await db.import_address_label.bulkCreate(importAddresses);
+              // await db.import_address_label.bulkCreate(importAddresses);
+              for (let j = 0; j < importAddresses.length; j++) {
+                await db.import_address_label.findOrCreate({
+                  where: { hash: importAddresses[j].hash },
+                  defaults: importAddresses[j]
+                });
+              }
             }
-            await sleep(5000 + 1000 * Math.trunc(Math.random() * 10));
+            await sleep(1000 + 1000 * Math.trunc(Math.random() * 10));
           }
           i = i + 1;
           console.log(i);
