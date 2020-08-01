@@ -139,7 +139,7 @@ module.exports = {
     updateLabelsOnAddress: async (parent, { from, to }, { db }, info) => {
       // to === 0 mean all
       try {
-        let x = await updateLabel(ERC20, db, from, to);
+        /*        let x = await updateLabel(ERC20, db, from, to);
         await addLog("updateLabelsOnAddress", `Updating ERC20 address done. Affected: ${x[0]} rows`);
         pubsub.publish(MESSAGE, {
           messageNotify: {
@@ -168,8 +168,8 @@ module.exports = {
           messageNotify: {
             message: `Updating Miner address done`
           }
-        });
-        x = await updateOneTime(db, from, to);
+        }); */
+        const x = await updateOneTime(db, from, to);
         await addLog("updateLabelsOnAddress", `Updating OneTime address done. Affected: ${x[0]} rows`);
         pubsub.publish(MESSAGE, {
           messageNotify: {
@@ -202,6 +202,7 @@ const insertFromTo = (whereClause, from, to) =>
 
 const updateLabel = async (label, db, from, to) => {
   // use imported address with label to set labels
+  // TODO names?
   const allImportedLABEL = await db.import_address_label.findAll({ where: { labelId: label }, raw: true });
   const allImportedLABELHahses = map(allImportedLABEL, "hash");
   // let whereClause = [{ id: allImportedLABELIds }, { labelId: NONE }];
@@ -259,52 +260,67 @@ const updateMiner = async (db, fromAddId, toAddId) => {
 
 const updateOneTime = async (db, fromAddId, toAddId) => {
   // use imported address with label miner, participant of minning pool to set labels
-  let where = [
-    {
-      labelId: NONE
-    }
-  ];
-  where = insertFromTo(where, fromAddId, toAddId);
-  const allNone = await db.address.findAll({
-    where: { [Op.and]: where },
-    raw: true
-    // limit: 7
-  });
-  const allNoneIds = map(allNone, "id");
+  // 60 000 000 - 90 000 000
+  // [ERR_INVALID_OPT_VALUE]: The value "2147483648" is invalid for option "size"
+  // max 98 374 156
+  // max 99 000 000
+  let k = fromAddId;
+  const border = toAddId || 99000000;
+  if (k > border) {
+    return;
+  }
+  const step = 100000;
+  do {
+    const where = [
+      {
+        labelId: NONE
+      },
+      { id: { [Op.between]: [k, k + step] } }
+    ];
 
-  // TODO make batch for, cu the addressIds, this call!!!
-  let trans = await db.transaction.findAll({
-    attributes: ["id", "from", "to"],
-    raw: true,
-    where: {
-      from: allNoneIds
-      // to: toAddId === 0 ? { [Op.gte]: fromAddId } : { [Op.between]: [fromAddId, toAddId] } // not needed
-    }
-    // limit: 100
-  });
+    const allNone = await db.address.findAll({
+      attributes: ["id"],
+      where: { [Op.and]: where },
+      raw: true
+      // limit: 7
+    });
+    const allNoneIds = map(allNone, "id");
 
-  const transGrouped = groupBy(trans, "from");
-  const transGroupedOneOut = flatten(filter(transGrouped, trans => trans.length === 1)); // only one outcome transaction
-  const transGroupedOneOutIds = map(transGroupedOneOut, "from");
-  trans = await db.transaction.findAll({
-    attributes: ["id", "from", "to"],
-    raw: true,
-    where: {
-      to: transGroupedOneOutIds
-    }
-    // limit: 2
-  });
+    // TODO make batch for, cu the addressIds, this call!!!
+    let trans = await db.transaction.findAll({
+      attributes: ["id", "from", "to"],
+      raw: true,
+      where: {
+        from: allNoneIds
+        // to: toAddId === 0 ? { [Op.gte]: fromAddId } : { [Op.between]: [fromAddId, toAddId] } // not needed
+      }
+      // limit: 100
+    });
 
-  const transOneOutGrouped = groupBy(trans, "to");
-  const transGroupedOneOutIn = flatten(filter(transOneOutGrouped, trans => trans.length === 1)); // only one outcome transaction
-  const transGroupedOneOutInIds = map(transGroupedOneOutIn, "to");
-  console.log(transGroupedOneOutIn); // TODO temporal
-  return db.address.update(
-    {
-      labelId: ONETIME
-    },
-    { where: { id: transGroupedOneOutInIds } }
-  );
+    const transGrouped = groupBy(trans, "from");
+    const transGroupedOneOut = flatten(filter(transGrouped, trans => trans.length === 1)); // only one outcome transaction
+    const transGroupedOneOutIds = map(transGroupedOneOut, "from");
+    trans = await db.transaction.findAll({
+      attributes: ["id", "from", "to"],
+      raw: true,
+      where: {
+        to: transGroupedOneOutIds
+      }
+      // limit: 2
+    });
+
+    const transOneOutGrouped = groupBy(trans, "to");
+    const transGroupedOneOutIn = flatten(filter(transOneOutGrouped, trans => trans.length === 1)); // only one outcome transaction
+    const transGroupedOneOutInIds = map(transGroupedOneOutIn, "to");
+    const x = await db.address.update(
+      {
+        labelId: ONETIME
+      },
+      { where: { id: transGroupedOneOutInIds } }
+    );
+    await addLog("updateLabelsOnAddress", `Updating OneTime address done. Affected: ${x[0]} rows`);
+    k = k + step;
+  } while (k < border);
 };
 
 function sleep(ms) {
