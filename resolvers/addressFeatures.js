@@ -4,12 +4,7 @@ const { buildFeatureForAddresses } = require("./utils");
 
 module.exports = {
   Query: {
-    addressFeatures: (
-      parent,
-      { orderBy, addresses = null, limit: lim, offset, ids = null },
-      { db },
-      info
-    ) => {
+    addressFeatures: (parent, { orderBy, addresses = null, limit: lim, offset, ids = null }, { db }, info) => {
       const whereOr = [];
       let order = null;
       if (addresses) {
@@ -34,17 +29,8 @@ module.exports = {
         order
       });
     },
-    getAndCalculateAddressFeatures: async (
-      parent,
-      { address },
-      { db },
-      info
-    ) => {
-      const result = await buildFeatureForAddresses(
-        db,
-        [{ hash: address }],
-        true
-      );
+    getAndCalculateAddressFeatures: async (parent, { address }, { db }, info) => {
+      const result = await buildFeatureForAddresses(db, [{ hash: address }], true);
       if (result.length && result[0]) {
         return result[0];
       }

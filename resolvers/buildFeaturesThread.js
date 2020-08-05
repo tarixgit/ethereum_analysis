@@ -13,7 +13,7 @@ const {
   concat,
   compact,
   sortBy,
-  some
+  slice
 } = require("lodash");
 const { addLog } = require("./utils");
 const models = require("../models/index");
@@ -24,6 +24,7 @@ process.on("message", x => {
 });
 
 const getCounters = (inputCounters, outputCounters, index) => inputCounters[index] || 0 + outputCounters[index] || 0;
+const getCounterInput = (inputCounters, index) => inputCounters[index] || 0;
 
 const median = (array, field = "") => {
   array = sortBy(array, field);
@@ -54,6 +55,7 @@ async function buildFeaturesMain(isRecalc) {
 }
 
 const recalcFeatures = async () => {
+  // make it int %
   const addresses = await models.address_feature.findAll();
   const scamAddresses = filter(addresses, "scam");
   const whiteAddresses = filter(addresses, item => !item.scam);
@@ -72,6 +74,8 @@ const recalcFeatures = async () => {
 };
 
 const buildFeatures = async () => {
+  const bathSize = 10;
+  let countOfAllFeaturesAdd = 0;
   const importAddresses = await models.import_address.findAll({
     attributes: ["id", "hash", "scam"],
     raw: true
@@ -82,18 +86,34 @@ const buildFeatures = async () => {
   const importAddressesNotInDB = differenceBy(importAddresses, addressesAlreadyInDB, "hash");
   const importScamAddressesNotInDB = filter(importAddressesNotInDB, "scam");
   const importWhiteAddressesNotInDB = filter(importAddressesNotInDB, item => !item.scam);
+  const allCount = importAddressesNotInDB.length;
+
   const scamAddresses = await getAddress(importScamAddressesNotInDB);
-  const scamAddressFeatures = await updateFeatureForAdresses(scamAddresses, false, true);
-  process.send({ msg: "Calculation for scam address are done " });
-  const whiteAddresses = await getAddress(importWhiteAddressesNotInDB);
-  const normalAddressFeatures = await updateFeatureForAdresses(whiteAddresses, false, false);
-  process.send({ msg: "Calculation for white address are done " });
-  const addressFeatures = concat(scamAddressFeatures, normalAddressFeatures);
-  if (addressFeatures.length) {
-    await models.address_feature.bulkCreate(addressFeatures);
-    return `Address features created: ${addressFeatures.length}`;
+  const batchCount = scamAddresses.length / bathSize;
+  for (let i = 0; i < batchCount; i++) {
+    const currentScamPoolAddress = slice(scamAddresses, i * bathSize, (i + 1) * bathSize);
+    const scamAddressFeatures = await updateFeatureForAdresses(currentScamPoolAddress, false, true);
+    if (scamAddressFeatures.length) {
+      await models.address_feature.bulkCreate(scamAddressFeatures);
+      countOfAllFeaturesAdd = countOfAllFeaturesAdd + scamAddressFeatures.length;
+    }
+    process.send({ msg: `Calculation running, ${(i + 1) / (allCount / bathSize)}% are done` });
   }
-  return "No features to created";
+  process.send({ msg: "Calculation for scam address are done " });
+
+  const whiteAddresses = await getAddress(importWhiteAddressesNotInDB);
+  const batchCountNotScam = whiteAddresses.length / bathSize;
+  for (let i = 0; i < batchCountNotScam; i++) {
+    const currentNotScamPoolAddress = slice(whiteAddresses, i * bathSize, (i + 1) * bathSize);
+    const notScamAddressFeatures = await updateFeatureForAdresses(currentNotScamPoolAddress, false, false);
+    if (notScamAddressFeatures.length) {
+      await models.address_feature.bulkCreate(notScamAddressFeatures);
+      countOfAllFeaturesAdd = countOfAllFeaturesAdd + notScamAddressFeatures.length;
+    }
+    process.send({ msg: `Calculation running, ${(i + 1 + batchCount) / (batchCount + batchCountNotScam)}% are done` });
+  }
+  process.send({ msg: "Calculation for white address are done " });
+  return `Address features created: ${countOfAllFeaturesAdd}`;
 };
 
 const getAddress = importAddresses => {
@@ -198,15 +218,24 @@ const getFeatureSetUpdate = (address, transactionsInput, transactionsOutput) => 
   const countOfTransInput = !transactionsInput.length ? 0 : transactionsInput.length;
   const countOfTransOutput = !transactionsOutput.length ? 0 : transactionsOutput.length;
   if (countOfAllTransaction) {
-    address.numberOfNone = getCounters(inputCounters, outputCounters, 0, countOfAllTransaction);
-    address.numberOfOneTime = getCounters(inputCounters, outputCounters, 3, countOfAllTransaction);
-    address.numberOfExchange = getCounters(inputCounters, outputCounters, 6, countOfAllTransaction);
-    address.numberOfMiningPool = getCounters(inputCounters, outputCounters, 1, countOfAllTransaction);
-    address.numberOfMiner = getCounters(inputCounters, outputCounters, 5, countOfAllTransaction);
-    address.numberOfSmContract = getCounters(inputCounters, outputCounters, 2, countOfAllTransaction);
-    address.numberOfERC20 = getCounters(inputCounters, outputCounters, 7, countOfAllTransaction);
-    address.numberOfERC721 = getCounters(inputCounters, outputCounters, 8, countOfAllTransaction);
-    address.numberOfTrace = getCounters(inputCounters, outputCounters, 4, countOfAllTransaction);
+    address.numberOfNone = getCounters(inputCounters, outputCounters, 0);
+    address.numberOfOneTime = getCounters(inputCounters, outputCounters, 3);
+    address.numberOfExchange = getCounters(inputCounters, outputCounters, 6);
+    address.numberOfMiningPool = getCounters(inputCounters, outputCounters, 1);
+    address.numberOfMiner = getCounters(inputCounters, outputCounters, 5);
+    address.numberOfSmContract = getCounters(inputCounters, outputCounters, 2);
+    address.numberOfERC20 = getCounters(inputCounters, outputCounters, 7);
+    address.numberOfERC721 = getCounters(inputCounters, outputCounters, 8);
+    address.numberOfTrace = getCounters(inputCounters, outputCounters, 4);
+    address.numberOfNoneInput = getCounterInput(inputCounters, 0);
+    address.numberOfOneTimeInput = getCounterInput(inputCounters, 3);
+    address.numberOfExchangeInput = getCounterInput(inputCounters, 6);
+    address.numberOfMiningPoolInput = getCounterInput(inputCounters, 1);
+    address.numberOfMinerInput = getCounterInput(inputCounters, 5);
+    address.numberOfSmContractInput = getCounterInput(inputCounters, 2);
+    address.numberOfERC20Input = getCounterInput(inputCounters, 7);
+    address.numberOfERC721Input = getCounterInput(inputCounters, 8);
+    address.numberOfTraceInput = getCounterInput(inputCounters, 4);
     address.medianOfEthProTrans = median(fullArr, "amount");
     address.averageOfEthProTrans = !countOfAllTransaction ? 0 : meanBy(fullArr, "amount");
     address.transInputMedian = median(transactionsInput, "amount");
@@ -227,7 +256,9 @@ const getFeatureSetUpdate = (address, transactionsInput, transactionsOutput) => 
     address.transInputAverageEth = meanBy(transactionsInput, "amount");
     address.transOutputMedianMinEth = median(transactionsOutput, "amount");
     address.transOutputAverageEth = meanBy(transactionsOutput, "amount");
-    address.haveScamNeighbor = some(transactionsOutput, "scam") ? 1 : 0;
+    address.numberOfScamNeighbor =
+      countBy(transactionsInput, "fromAddress.scam").true + countBy(transactionsOutput, "fromAddress.scam").true;
+    address.numberOfScamNeighborInput = countBy(transactionsInput, "fromAddress.scam").true;
   }
   return address;
 };
