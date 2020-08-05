@@ -13,7 +13,8 @@ const {
   concat,
   compact,
   sortBy,
-  slice
+  slice,
+  get
 } = require("lodash");
 const { addLog } = require("./utils");
 const models = require("../models/index");
@@ -97,7 +98,8 @@ const buildFeatures = async () => {
       await models.address_feature.bulkCreate(scamAddressFeatures);
       countOfAllFeaturesAdd = countOfAllFeaturesAdd + scamAddressFeatures.length;
     }
-    process.send({ msg: `Calculation running, ${(i + 1) / (allCount / bathSize)}% are done` });
+    const precent = Math.floor(((i + 1) / (allCount / bathSize)) * 100);
+    process.send({ msg: `Calculation running, ${precent}% are done` });
   }
   process.send({ msg: "Calculation for scam address are done " });
 
@@ -110,7 +112,8 @@ const buildFeatures = async () => {
       await models.address_feature.bulkCreate(notScamAddressFeatures);
       countOfAllFeaturesAdd = countOfAllFeaturesAdd + notScamAddressFeatures.length;
     }
-    process.send({ msg: `Calculation running, ${(i + 1 + batchCount) / (batchCount + batchCountNotScam)}% are done` });
+    const precent = Math.floor(((i + 1 + batchCount) / (batchCount + batchCountNotScam)) * 100);
+    process.send({ msg: `Calculation running, ${precent}% are done` });
   }
   process.send({ msg: "Calculation for white address are done " });
   return `Address features created: ${countOfAllFeaturesAdd}`;
@@ -125,7 +128,7 @@ const getAddress = importAddresses => {
   });
 };
 const updateFeatureForAdresses = async (addresses, isRecalc, isScam) => {
-  const ids = uniq(map(addresses, "addressId"));
+  const ids = isRecalc ? uniq(map(addresses, "addressId")) : uniq(map(addresses, "id"));
 
   let transactionsInputs = await models.transaction.findAll({
     attributes: ["id", "bid", "tid", "from", "to", "amount"],
@@ -245,20 +248,20 @@ const getFeatureSetUpdate = (address, transactionsInput, transactionsOutput) => 
     address.numberOfTransInput = countOfTransInput;
     address.numberOfTransOutput = countOfTransOutput;
     address.numberOfTransactions = countOfAllTransaction;
-    address.minEth = minBy(fullArr, "amount");
-    address.maxEth = maxBy(fullArr, "amount");
+    address.minEth = get(minBy(fullArr, "amount"), "amount", 0);
+    address.maxEth = get(maxBy(fullArr, "amount"), "amount", 0);
 
-    address.transInputMinEth = minBy(transactionsInput, "amount");
-    address.transInputMaxEth = maxBy(transactionsInput, "amount");
-    address.transOutputMinEth = minBy(transactionsOutput, "amount");
-    address.transOutputMaxEth = maxBy(transactionsOutput, "amount");
+    address.transInputMinEth = get(minBy(transactionsInput, "amount"), "amount", 0);
+    address.transInputMaxEth = get(maxBy(transactionsInput, "amount"), "amount", 0);
+    address.transOutputMinEth = get(minBy(transactionsOutput, "amount"), "amount", 0);
+    address.transOutputMaxEth = get(maxBy(transactionsOutput, "amount"), "amount", 0);
     address.transInputMedianEth = median(transactionsInput, "amount");
     address.transInputAverageEth = meanBy(transactionsInput, "amount");
     address.transOutputMedianMinEth = median(transactionsOutput, "amount");
     address.transOutputAverageEth = meanBy(transactionsOutput, "amount");
     address.numberOfScamNeighbor =
-      countBy(transactionsInput, "fromAddress.scam").true + countBy(transactionsOutput, "fromAddress.scam").true;
-    address.numberOfScamNeighborInput = countBy(transactionsInput, "fromAddress.scam").true;
+      countBy(transactionsInput, "fromAddress.scam")[1] || 0 + countBy(transactionsOutput, "toAddress.scam")[1] || 0;
+    address.numberOfScamNeighborInput = countBy(transactionsInput, "fromAddress.scam")[1] || 0;
   }
   return address;
 };

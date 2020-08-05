@@ -139,7 +139,7 @@ module.exports = {
     updateLabelsOnAddress: async (parent, { from, to }, { db }, info) => {
       // to === 0 mean all
       try {
-        /*        let x = await updateLabel(ERC20, db, from, to);
+        let x = await updateLabel(ERC20, db, from, to);
         await addLog("updateLabelsOnAddress", `Updating ERC20 address done. Affected: ${x[0]} rows`);
         pubsub.publish(MESSAGE, {
           messageNotify: {
@@ -168,9 +168,9 @@ module.exports = {
           messageNotify: {
             message: `Updating Miner address done`
           }
-        }); */
-        const x = await updateOneTime(db, from, to);
-        await addLog("updateLabelsOnAddress", `Updating OneTime address done. Affected: ${x[0]} rows`);
+        });
+        await updateOneTime(db, from, to);
+        await addLog("updateLabelsOnAddress", `Updating OneTime address done.`);
         pubsub.publish(MESSAGE, {
           messageNotify: {
             message: `Updating OneTime address done`
@@ -263,13 +263,13 @@ const updateOneTime = async (db, fromAddId, toAddId) => {
   // 60 000 000 - 90 000 000
   // [ERR_INVALID_OPT_VALUE]: The value "2147483648" is invalid for option "size"
   // max 98 374 156
-  // max 99 000 000
+  // max 96 000 000
   let k = fromAddId;
-  const border = toAddId || 99000000;
+  const border = toAddId || 96000000;
   if (k > border) {
     return;
   }
-  const step = 100000;
+  const step = 25000;
   do {
     const where = [
       {
@@ -282,21 +282,23 @@ const updateOneTime = async (db, fromAddId, toAddId) => {
       attributes: ["id"],
       where: { [Op.and]: where },
       raw: true
-      // limit: 7
     });
     const allNoneIds = map(allNone, "id");
 
-    // TODO make batch for, cu the addressIds, this call!!!
-    let trans = await db.transaction.findAll({
-      attributes: ["id", "from", "to"],
-      raw: true,
-      where: {
-        from: allNoneIds
-        // to: toAddId === 0 ? { [Op.gte]: fromAddId } : { [Op.between]: [fromAddId, toAddId] } // not needed
-      }
-      // limit: 100
-    });
-
+    let trans = await Promise.all(
+      map(allNoneIds, addId =>
+        db.transaction.findAll({
+          attributes: ["id", "from", "to"],
+          raw: true,
+          where: {
+            from: addId
+            // to: toAddId === 0 ? { [Op.gte]: fromAddId } : { [Op.between]: [fromAddId, toAddId] } // not needed
+          },
+          limit: 2
+        })
+      )
+    );
+    trans = flatten(trans);
     const transGrouped = groupBy(trans, "from");
     const transGroupedOneOut = flatten(filter(transGrouped, trans => trans.length === 1)); // only one outcome transaction
     const transGroupedOneOutIds = map(transGroupedOneOut, "from");
@@ -306,7 +308,6 @@ const updateOneTime = async (db, fromAddId, toAddId) => {
       where: {
         to: transGroupedOneOutIds
       }
-      // limit: 2
     });
 
     const transOneOutGrouped = groupBy(trans, "to");
@@ -318,7 +319,12 @@ const updateOneTime = async (db, fromAddId, toAddId) => {
       },
       { where: { id: transGroupedOneOutInIds } }
     );
-    await addLog("updateLabelsOnAddress", `Updating OneTime address done. Affected: ${x[0]} rows`);
+    await addLog(
+      "updateLabelsOnAddress",
+      `Updating OneTime address done. Affected: ${x[0]} rows, last Id:${
+        transGroupedOneOutInIds[transGroupedOneOutInIds.length - 1]
+      }`
+    );
     k = k + step;
   } while (k < border);
 };
