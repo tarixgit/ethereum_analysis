@@ -42,7 +42,8 @@ module.exports = {
                 category,
                 subcategory,
                 reporter,
-                status
+                status,
+                scam: true
               }))
           );
 
