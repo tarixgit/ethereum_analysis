@@ -61,9 +61,9 @@ const recalcFeatures = async () => {
   const scamAddresses = filter(addresses, "scam");
   const whiteAddresses = filter(addresses, item => !item.scam);
 
-  const scamAddressFeatures = await updateFeatureForAdresses(scamAddresses, true);
+  const scamAddressFeatures = await updateFeatureForAddresses(scamAddresses, true);
   process.send({ msg: "Calculation for scam address are done " });
-  const normalAddressFeatures = await updateFeatureForAdresses(whiteAddresses, true);
+  const normalAddressFeatures = await updateFeatureForAddresses(whiteAddresses, true);
   process.send({ msg: "Calculation for white address are done " });
   const addressFeatures = concat(scamAddressFeatures, normalAddressFeatures);
   if (addressFeatures.length) {
@@ -93,7 +93,7 @@ const buildFeatures = async () => {
   const batchCount = scamAddresses.length / bathSize;
   for (let i = 0; i < batchCount; i++) {
     const currentScamPoolAddress = slice(scamAddresses, i * bathSize, (i + 1) * bathSize);
-    const scamAddressFeatures = await updateFeatureForAdresses(currentScamPoolAddress, false, true);
+    const scamAddressFeatures = await updateFeatureForAddresses(currentScamPoolAddress, false, true);
     if (scamAddressFeatures.length) {
       await models.address_feature.bulkCreate(scamAddressFeatures);
       countOfAllFeaturesAdd = countOfAllFeaturesAdd + scamAddressFeatures.length;
@@ -107,7 +107,7 @@ const buildFeatures = async () => {
   const batchCountNotScam = whiteAddresses.length / bathSize;
   for (let i = 0; i < batchCountNotScam; i++) {
     const currentNotScamPoolAddress = slice(whiteAddresses, i * bathSize, (i + 1) * bathSize);
-    const notScamAddressFeatures = await updateFeatureForAdresses(currentNotScamPoolAddress, false, false);
+    const notScamAddressFeatures = await updateFeatureForAddresses(currentNotScamPoolAddress, false, false);
     if (notScamAddressFeatures.length) {
       await models.address_feature.bulkCreate(notScamAddressFeatures);
       countOfAllFeaturesAdd = countOfAllFeaturesAdd + notScamAddressFeatures.length;
@@ -127,7 +127,7 @@ const getAddress = importAddresses => {
     raw: true
   });
 };
-const updateFeatureForAdresses = async (addresses, isRecalc, isScam) => {
+const updateFeatureForAddresses = async (addresses, isRecalc, isScam) => {
   const ids = isRecalc ? uniq(map(addresses, "addressId")) : uniq(map(addresses, "id"));
 
   let transactionsInputs = await models.transaction.findAll({
@@ -267,3 +267,4 @@ const getFeatureSetUpdate = (address, transactionsInput, transactionsOutput) => 
 };
 
 exports.getFeatureSetUpdate = getFeatureSetUpdate;
+exports.updateFeatureForAddresses = updateFeatureForAddresses;

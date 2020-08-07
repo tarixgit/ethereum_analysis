@@ -1,6 +1,6 @@
 const { Op } = require("sequelize");
 const { map } = require("lodash");
-const { buildFeatureForAddresses } = require("./utils");
+const { updateFeatureForAddresses } = require("./buildFeaturesThread");
 
 module.exports = {
   Query: {
@@ -30,7 +30,8 @@ module.exports = {
       });
     },
     getAndCalculateAddressFeatures: async (parent, { address }, { db }, info) => {
-      const result = await buildFeatureForAddresses(db, [{ hash: address }], true);
+      const addressFromDB = await db.address.findAll({ where: { hash: address } });
+      const result = await updateFeatureForAddresses(addressFromDB, false, false);
       if (result.length && result[0]) {
         return result[0];
       }
