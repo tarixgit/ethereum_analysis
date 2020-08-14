@@ -44,7 +44,16 @@ module.exports = function(sequelize, DataTypes) {
       transOutputMedianMinEth: DataTypes.DOUBLE,
       transOutputAverageEth: DataTypes.DOUBLE,
       numberOfScamNeighbor: DataTypes.INTEGER,
-      numberOfScamNeighborInput: DataTypes.INTEGER
+      numberOfScamNeighborInput: DataTypes.INTEGER,
+      numberOfNoneTr: DataTypes.INTEGER,
+      numberOfOneTimeTr: DataTypes.INTEGER,
+      numberOfExchangeTr: DataTypes.INTEGER,
+      numberOfMiningPoolTr: DataTypes.INTEGER,
+      numberOfMinerTr: DataTypes.INTEGER,
+      numberOfSmContractTr: DataTypes.INTEGER,
+      numberOfERC20Tr: DataTypes.INTEGER,
+      numberOfERC721Tr: DataTypes.INTEGER,
+      numberOfTraceTr: DataTypes.INTEGER
     },
     {
       timestamps: false,

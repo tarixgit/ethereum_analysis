@@ -14,6 +14,7 @@ const {
   compact,
   sortBy,
   slice,
+  uniqBy,
   get
 } = require("lodash");
 const { addLog } = require("./utils");
@@ -214,8 +215,14 @@ const createFeatures = (addresses, transactionsInputsKeyed, transactionsOutputsK
 };
 
 const getFeatureSetUpdate = (address, transactionsInput, transactionsOutput) => {
-  const inputCounters = countBy(transactionsInput, "fromAddress.labelId");
-  const outputCounters = countBy(transactionsOutput, "toAddress.labelId");
+  // from address id unique
+  // to address id unique
+  const inputCountersAll = countBy(transactionsInput, "fromAddress.labelId");
+  const outputCountersAll = countBy(transactionsOutput, "toAddress.labelId");
+  const transactionsInputUnique = uniqBy(transactionsInput, "fromAddress.id");
+  const transactionsOutputUnique = uniqBy(transactionsOutput, "toAddress.id");
+  const inputCounters = countBy(transactionsInputUnique, "fromAddress.labelId");
+  const outputCounters = countBy(transactionsOutputUnique, "toAddress.labelId");
   const fullArr = compact(concat(transactionsInput, transactionsOutput));
   const countOfAllTransaction = fullArr.length;
   const countOfTransInput = !transactionsInput.length ? 0 : transactionsInput.length;
@@ -241,6 +248,15 @@ const getFeatureSetUpdate = (address, transactionsInput, transactionsOutput) => 
     address.numberOfTraceInput = getCounterInput(inputCounters, 4);
     address.medianOfEthProTrans = median(fullArr, "amount");
     address.averageOfEthProTrans = !countOfAllTransaction ? 0 : meanBy(fullArr, "amount");
+    address.numberOfNoneTr = getCounters(inputCountersAll, outputCountersAll, 0);
+    address.numberOfOneTimeTr = getCounters(inputCountersAll, outputCountersAll, 3);
+    address.numberOfExchangeTr = getCounters(inputCountersAll, outputCountersAll, 6);
+    address.numberOfMiningPoolTr = getCounters(inputCountersAll, outputCountersAll, 1);
+    address.numberOfMinerTr = getCounters(inputCountersAll, outputCountersAll, 5);
+    address.numberOfSmContractTr = getCounters(inputCountersAll, outputCountersAll, 2);
+    address.numberOfERC20Tr = getCounters(inputCountersAll, outputCountersAll, 7);
+    address.numberOfERC721Tr = getCounters(inputCountersAll, outputCountersAll, 8);
+    address.numberOfTraceTr = getCounters(inputCountersAll, outputCountersAll, 4);
     address.transInputMedian = median(transactionsInput, "amount");
     address.transOutputMedian = median(transactionsOutput, "amount");
     address.transInputAverage = !transactionsInput.length ? 0 : meanBy(transactionsInput, "amount");
