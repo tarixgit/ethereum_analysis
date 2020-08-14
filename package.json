@@ -48,7 +48,7 @@
     "graphql": "^14.5.8",
     "graphql-tools": "^4.0.6",
     "jest": "^24.9.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "node-html-parser": "^1.2.20",
     "pg": "^7.15.1",
     "pg-hstore": "^2.3.3",
