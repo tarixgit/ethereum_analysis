@@ -102,7 +102,16 @@ module.exports = `
       transOutputMedianMinEth: Float,
       transOutputAverageEth: Float,
       numberOfScamNeighbor: Int,
-      numberOfScamNeighborInput: Int,      
+      numberOfScamNeighborInput: Int,
+      numberOfNoneTr: Int,
+      numberOfOneTimeTr: Int,
+      numberOfExchangeTr: Int,
+      numberOfMiningPoolTr: Int,
+      numberOfMinerTr: Int,
+      numberOfSmContractTr: Int,
+      numberOfERC20Tr: Int,
+      numberOfERC721Tr : Int,
+      numberOfTraceTr: Int,
       addresses: Address!
   }
   type AddressFeatureCalc {      
