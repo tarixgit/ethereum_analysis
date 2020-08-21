@@ -16,7 +16,7 @@ async function findScammers(childrensArr, maxDepth, checkedAddress, direction) {
       process.pid
     );
     await addLog("searchNeighborScamThread", `Recieved the number of path: ${childrensArr.length}`, process.pid);
-    const foundPaths = await findScammer(childrensArr, models, maxDepth, checkedAddress, direction, 0);
+    const foundPaths = await findScammer(childrensArr, models, maxDepth, checkedAddress, direction, 1);
     process.send({ foundPaths });
     console.log(foundPaths);
     process.exit(0);
