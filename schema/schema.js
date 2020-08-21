@@ -169,6 +169,7 @@ module.exports = `
    label: String, 
    group: Int!, 
    shape: String
+   main: Boolean
   }
   type Edge {
    from: Int,

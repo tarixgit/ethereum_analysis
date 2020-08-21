@@ -42,7 +42,8 @@ async function buildFeaturesMain(isRecalc) {
   try {
     await addLog(
       "buildFeaturesThread",
-      isRecalc ? "Started thread recalculation of features" : "Started thread for features build for new address"
+      isRecalc ? "Started thread recalculation of features" : "Started thread for features build for new address",
+      process.pid
     );
     const msg = isRecalc ? await recalcFeatures() : await buildFeatures();
     process.send({ msg });

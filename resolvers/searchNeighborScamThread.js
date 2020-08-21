@@ -10,9 +10,13 @@ process.on("message", x => {
 
 async function findScammers(childrensArr, maxDepth, checkedAddress, direction) {
   try {
-    await addLog("searchNeighborScamThread", `Started thread for searching scam neighbors with maxDepth ${maxDepth}`);
-    await addLog("searchNeighborScamThread", `Recieved the number of path: ${childrensArr.length}`);
-    const foundPaths = await findScammer(childrensArr, models, maxDepth, checkedAddress, direction);
+    await addLog(
+      "searchNeighborScamThread",
+      `Started thread for searching scam neighbors with maxDepth ${maxDepth}`,
+      process.pid
+    );
+    await addLog("searchNeighborScamThread", `Recieved the number of path: ${childrensArr.length}`, process.pid);
+    const foundPaths = await findScammer(childrensArr, models, maxDepth, checkedAddress, direction, maxDepth);
     process.send({ foundPaths });
     console.log(foundPaths);
     process.exit(0);
@@ -28,9 +32,9 @@ async function findScammers(childrensArr, maxDepth, checkedAddress, direction) {
   }
 }
 
-const findScammer = async (parentArr, db, maxDepth, checkedAddress, direction) => {
-  console.log(maxDepth);
-  if (maxDepth <= 0) {
+const findScammer = async (parentArr, db, depth, checkedAddress, direction, maxDepth) => {
+  console.log(depth);
+  if (depth <= 0) {
     // eslint-disable-next-line no-throw-literal
     throw `Maximal level of looping arrive. Checked the ${checkedAddress.length} addresses`;
   }
@@ -71,7 +75,7 @@ const findScammer = async (parentArr, db, maxDepth, checkedAddress, direction) =
     attributes: ["id", "addressId", "scam"],
     where: { addressId: childrensIds, scam: true }
   });
-  process.send({ msg: `Checking of level number ${maxDepth} is done` });
+  process.send({ msg: `Checking of level number ${maxDepth - depth + 1} is done` });
   if (foundScamAddress.length) {
     const pathsToScam = intersectionWith(
       newChildrenArray,
@@ -79,11 +83,11 @@ const findScammer = async (parentArr, db, maxDepth, checkedAddress, direction) =
       (valuePath, valueAdd) => valuePath[valuePath.length - 1] === valueAdd.addressId
     );
     process.send({
-      msg: `Found the scam address in neighbors. Checked ${checkedAddress.length} addresses.`
+      msg: `Found the scam address in neighbors. Checked ${checkedAddress.length} addresses and ${transFiltered.length} transactions.`
     });
     return pathsToScam;
   } else {
-    return findScammer(newChildrenArray, db, maxDepth - 1, checkedAddress);
+    return findScammer(newChildrenArray, db, depth - 1, checkedAddress, maxDepth);
   }
 };
 

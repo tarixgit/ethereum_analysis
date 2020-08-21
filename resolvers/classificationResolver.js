@@ -152,12 +152,16 @@ const startThreadCalc = async isRecalc => {
   );
   forked.on("message", ({ msg = null }) => {
     if (!isEmpty(msg)) {
-      addLog(`buildFeaturesThread: ${forked.pid}`, msg); // no needed await
+      addLog(`buildFeaturesThread: ${forked.pid}`, msg, forked.pid); // no needed await
       pubsub.publish(MESSAGE, { messageNotify: { message: msg } });
     }
   });
   forked.on("exit", async status => {
-    await addLog("buildFeaturesThread", `Feature calculation process in thread stopped with code: ${status}`);
+    await addLog(
+      "buildFeaturesThread",
+      `Feature calculation process in thread stopped with code: ${status}`,
+      forked.pid
+    );
     if (status) {
       pubsub.publish(MESSAGE, {
         messageNotify: {
@@ -172,7 +176,7 @@ const startThreadCalc = async isRecalc => {
       });
     }
   });
-  await addLog("buildFeaturesThread", `child pid: ${forked.pid}`);
+  await addLog("buildFeaturesThread", `child pid: ${forked.pid}`, forked.pid);
   forked.send({
     isRecalc
   });

@@ -37,6 +37,9 @@ module.exports = {
       const firstAddress = await db.address.findOne({
         where: { hash: address }
       });
+      if (!firstAddress) {
+        throw new Error("Address not exist.");
+      }
       const maxDepth = level || 3;
       const checkedAddress = [firstAddress.id];
       const childrensArr = [[firstAddress.id]];
@@ -54,7 +57,7 @@ module.exports = {
       forked.on("message", async ({ foundPaths, msg = null }) => {
         console.log(foundPaths);
         if (!isEmpty(msg)) {
-          addLog("searchNeighborScamThread", msg);
+          addLog("searchNeighborScamThread", msg, forked.pid);
           pubsub.publish(MESSAGE, { messageNotify: { message: msg } });
         }
         if (foundPaths && isArray(foundPaths) && isArray(foundPaths[0])) {
@@ -62,20 +65,13 @@ module.exports = {
             where: { id: flatten(foundPaths) }
           });
           const answer = {
-            nodes: map(addressesFromPaths, ({ id, hash, labelId, scam, alias }) =>
-              scam
-                ? {
-                    id,
-                    label: alias || hash,
-                    group: labelId,
-                    shape: "star"
-                  }
-                : {
-                    id,
-                    label: alias || hash,
-                    group: labelId
-                  }
-            ),
+            nodes: map(addressesFromPaths, ({ id, hash, labelId, scam, alias }) => ({
+              id,
+              label: alias || hash,
+              group: labelId,
+              shape: scam ? "star" : undefined,
+              main: id === foundPaths[0][0]
+            })),
             edges: flatten(
               map(foundPaths, path =>
                 map(take(path, path.length - 1), (id, index) =>
@@ -92,12 +88,16 @@ module.exports = {
               )
             )
           };
-          addLog("searchNeighborScamThread", "Recieved result", answer);
+          addLog("searchNeighborScamThread", "Recieved result", forked.pid, answer);
           pubsub.publish(FOUND_NEIGHBOR, { neighborsScamFounded: answer });
         }
       });
       forked.on("exit", async status => {
-        await addLog("searchNeighborScamThread", `Searching process in thread stopped with code: ${status}`);
+        await addLog(
+          "searchNeighborScamThread",
+          `Searching process in thread stopped with code: ${status}`,
+          forked.pid
+        );
         if (status) {
           pubsub.publish(MESSAGE, {
             messageNotify: {
@@ -112,8 +112,8 @@ module.exports = {
           });
         }
       });
-      await addLog("searchNeighborScamThread", `child pid: ${forked.pid}`);
-      await addLog("searchNeighborScamThread", `Address: ${address}`);
+      await addLog("searchNeighborScamThread", `child pid: ${forked.pid}`, forked.pid);
+      await addLog("searchNeighborScamThread", `Address: ${address} ${!direction ? "from" : "to"}`, forked.pid);
       forked.send({
         childrensArr,
         maxDepth,

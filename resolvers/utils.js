@@ -122,9 +122,9 @@ module.exports = {
 
     return addressFeaturesUpdated;
   },
-  addLog: async (name, description, data) => {
+  addLog: async (name, description, threadId = null, data) => {
     console.log(`${name}: ${description}`);
-    return models.log.create({ name, description, data });
+    return models.log.create({ name, description, data, threadId });
   }
 };
 
