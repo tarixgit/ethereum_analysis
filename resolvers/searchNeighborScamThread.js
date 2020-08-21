@@ -16,7 +16,7 @@ async function findScammers(childrensArr, maxDepth, checkedAddress, direction) {
       process.pid
     );
     await addLog("searchNeighborScamThread", `Recieved the number of path: ${childrensArr.length}`, process.pid);
-    const foundPaths = await findScammer(childrensArr, models, maxDepth, checkedAddress, direction, maxDepth);
+    const foundPaths = await findScammer(childrensArr, models, maxDepth, checkedAddress, direction, 0);
     process.send({ foundPaths });
     console.log(foundPaths);
     process.exit(0);
@@ -32,7 +32,7 @@ async function findScammers(childrensArr, maxDepth, checkedAddress, direction) {
   }
 }
 
-const findScammer = async (parentArr, db, depth, checkedAddress, direction, maxDepth) => {
+const findScammer = async (parentArr, db, depth, checkedAddress, direction, count) => {
   console.log(depth);
   if (depth <= 0) {
     // eslint-disable-next-line no-throw-literal
@@ -75,7 +75,7 @@ const findScammer = async (parentArr, db, depth, checkedAddress, direction, maxD
     attributes: ["id", "addressId", "scam"],
     where: { addressId: childrensIds, scam: true }
   });
-  process.send({ msg: `Checking of level number ${maxDepth - depth + 1} is done` });
+  process.send({ msg: `Checking of level number ${count} is done` });
   if (foundScamAddress.length) {
     const pathsToScam = intersectionWith(
       newChildrenArray,
@@ -87,7 +87,7 @@ const findScammer = async (parentArr, db, depth, checkedAddress, direction, maxD
     });
     return pathsToScam;
   } else {
-    return findScammer(newChildrenArray, db, depth - 1, checkedAddress, maxDepth);
+    return findScammer(newChildrenArray, db, depth - 1, checkedAddress, count + 1);
   }
 };
 
