@@ -87,7 +87,7 @@ const findScammer = async (parentArr, db, depth, checkedAddress, direction, coun
     });
     return pathsToScam;
   } else {
-    return findScammer(newChildrenArray, db, depth - 1, checkedAddress, count + 1);
+    return findScammer(newChildrenArray, db, depth - 1, checkedAddress, direction, count + 1);
   }
 };
 
