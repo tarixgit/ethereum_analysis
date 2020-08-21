@@ -186,6 +186,7 @@ module.exports = `
     description: String
     createdAt: String
     data: Graph
+    threadId: Int, 
   }
   type ImportAddressesWCount {
     rows: [ImportAddress!]!
