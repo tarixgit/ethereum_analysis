@@ -240,13 +240,13 @@ module.exports = `
     logs(orderBy: [Order], offset: Int, limit: Int, ids: [ID], addresses: [String]): Logs!
     getAndCalculateAddressFeatures(address: String!): AddressFeatureCalc!
     transactionFeatures: [TransactionFeature!]!
-    findNeighborsScam(address: String!, level: Int): Graph!
+    findNeighborsScam(address: String!, level: Int, direction: Int): Graph!
     getUpdateState: UpdateState!
   }
   type Mutation {
     addAddressToImport(address: ImportAddressInput!): GeneralResponse!
     deleteAddressToImport(id: Int): GeneralResponse!
-    findNeighborsScamThread(address: String!, level: Int): GeneralResponse!
+    findNeighborsScamThread(address: String!, level: Int, direction: Int): GeneralResponse!
     loadData: GeneralResponse!
     buildFeatures: GeneralResponse!
     recalcFeatures: GeneralResponse!

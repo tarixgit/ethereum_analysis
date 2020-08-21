@@ -33,7 +33,7 @@ module.exports = {
         message: "Address deleted"
       };
     },
-    findNeighborsScamThread: async (parent, { address, level }, { db }, info) => {
+    findNeighborsScamThread: async (parent, { address, level, direction }, { db }, info) => {
       const firstAddress = await db.address.findOne({
         where: { hash: address }
       });
@@ -78,10 +78,17 @@ module.exports = {
             ),
             edges: flatten(
               map(foundPaths, path =>
-                map(take(path, path.length - 1), (id, index) => ({
-                  from: id,
-                  to: path[index + 1]
-                }))
+                map(take(path, path.length - 1), (id, index) =>
+                  !direction
+                    ? {
+                        from: id,
+                        to: path[index + 1]
+                      }
+                    : {
+                        to: id,
+                        from: path[index + 1]
+                      }
+                )
               )
             )
           };
@@ -110,7 +117,8 @@ module.exports = {
       forked.send({
         childrensArr,
         maxDepth,
-        checkedAddress
+        checkedAddress,
+        direction
       });
       return {
         success: true,

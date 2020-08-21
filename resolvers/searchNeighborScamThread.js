@@ -4,15 +4,15 @@ const { groupBy, differenceWith, intersectionWith, flatMap, map, uniqBy } = requ
 const models = require("../models/index");
 
 process.on("message", x => {
-  const { childrensArr, maxDepth, checkedAddress } = x;
-  return findScammers(childrensArr, maxDepth, checkedAddress);
+  const { childrensArr, maxDepth, checkedAddress, direction } = x;
+  return findScammers(childrensArr, maxDepth, checkedAddress, direction);
 });
 
-async function findScammers(childrensArr, maxDepth, checkedAddress) {
+async function findScammers(childrensArr, maxDepth, checkedAddress, direction) {
   try {
     await addLog("searchNeighborScamThread", `Started thread for searching scam neighbors with maxDepth ${maxDepth}`);
     await addLog("searchNeighborScamThread", `Recieved the number of path: ${childrensArr.length}`);
-    const foundPaths = await findScammer(childrensArr, models, maxDepth, checkedAddress);
+    const foundPaths = await findScammer(childrensArr, models, maxDepth, checkedAddress, direction);
     process.send({ foundPaths });
     console.log(foundPaths);
     process.exit(0);
@@ -28,31 +28,38 @@ async function findScammers(childrensArr, maxDepth, checkedAddress) {
   }
 }
 
-const findScammer = async (parentArr, db, maxDepth, checkedAddress) => {
+const findScammer = async (parentArr, db, maxDepth, checkedAddress, direction) => {
   console.log(maxDepth);
   if (maxDepth <= 0) {
     // eslint-disable-next-line no-throw-literal
     throw `Maximal level of looping arrive. Checked the ${checkedAddress.length} addresses`;
   }
+  // default from
+  const from = !direction ? "from" : "to";
+  const to = !direction ? "to" : "from";
   const parentIds = map(parentArr, arr => arr[arr.length - 1]);
   const trans = await db.transaction.findAll({
     attributes: ["id", "from", "to"],
-    where: {
-      from: parentIds
-    },
+    where: direction
+      ? {
+          to: parentIds
+        }
+      : {
+          from: parentIds
+        },
     raw: true
   });
 
   // remove cricles
-  const transFiltered = differenceWith(trans, checkedAddress, (valueNew, valueOld) => valueNew.to === valueOld);
+  const transFiltered = differenceWith(trans, checkedAddress, (valueNew, valueOld) => valueNew[to] === valueOld);
 
   // build paths
-  const transGrouped = groupBy(transFiltered, "from");
+  const transGrouped = groupBy(transFiltered, from);
   const newChildrenArray = flatMap(parentArr, pathToParent => {
     const parent = pathToParent[pathToParent.length - 1]; // is the same as transGrouped.key, iterate transGrouped.from
     let oneParentMoreChildrens = transGrouped[parent];
-    oneParentMoreChildrens = uniqBy(oneParentMoreChildrens, "to"); // not good, if need sum of amout
-    return map(oneParentMoreChildrens, item => [...pathToParent, item.to]);
+    oneParentMoreChildrens = uniqBy(oneParentMoreChildrens, to); // not good, if need sum of amout
+    return map(oneParentMoreChildrens, item => [...pathToParent, item[to]]);
   });
   const childrensIds = map(newChildrenArray, arr => arr[arr.length - 1]);
   checkedAddress = checkedAddress.concat(childrensIds);
