@@ -30,7 +30,7 @@
   },
   "homepage": "https://github.com/tarixgit/master_arbeit#readme",
   "dependencies": {
-    "@hapi/hapi": "^18.4.0",
+    "@hapi/hapi": "^19.1.1",
     "apollo-server": "^2.13.1",
     "apollo-server-hapi": "^2.9.14",
     "axios": "^0.19.2",
