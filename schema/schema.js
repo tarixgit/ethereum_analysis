@@ -229,7 +229,7 @@ module.exports = `
     label(id: ID!): Label!
     labels(limit: Int): [Label!]!
     block(id: ID!): Block!
-    blocks(limit: Int): [Block!]!
+    blocks(limit: Int, ids: [Int]): [Block!]!
     contractTransaction(id: ID!): ContractTrans!
     contractTransactions(limit: Int): [ContractTrans!]!
     contractTransType(id: ID!): ContractTransType!
@@ -239,7 +239,7 @@ module.exports = `
     importAddress(id: ID!): ImportAddress!
     importAddresses(orderBy: [Order], offset: Int, limit: Int, ids: [ID], addresses: [String]): ImportAddressesWCount!
     addressFeatures(orderBy: [Order], offset: Int, limit: Int, ids: [ID], addresses: [String]): AddressFeaturesWCount!
-    logs(orderBy: [Order], offset: Int, limit: Int, ids: [ID], addresses: [String]): Logs!
+    logs(orderBy: [Order], offset: Int, limit: Int, ids: [ID] ): Logs!
     getAndCalculateAddressFeatures(address: String!): AddressFeatureCalc!
     transactionFeatures: [TransactionFeature!]!
     findNeighborsScam(address: String!, level: Int, direction: Int): Graph!

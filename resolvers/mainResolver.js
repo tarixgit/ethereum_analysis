@@ -7,8 +7,7 @@ module.exports = {
       }),
 
     block: (parent, { id }, { db }, info) => db.block.findOne(id),
-    blocks: (parent, { limit: lim }, { db }, info) =>
-      db.block.findAll({ limit: lim || 100 }),
+    blocks: (parent, { limit: lim, ids }, { db }, info) => db.block.findAll({ where: { id: ids }, limit: lim || 100 }),
 
     contractTransaction: (parent, { id }, { db }, info) =>
       db.contract_trans.findByPk(id, {

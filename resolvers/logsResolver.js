@@ -3,17 +3,9 @@ const { map } = require("lodash");
 
 module.exports = {
   Query: {
-    logs: (
-      parent,
-      { orderBy, addresses = null, limit: lim, offset, ids = null },
-      { db },
-      info
-    ) => {
+    logs: (parent, { orderBy, limit: lim, offset, ids = null }, { db }, info) => {
       const whereOr = [];
       let order = null;
-      if (addresses) {
-        whereOr.push({ hash: addresses });
-      }
       if (ids) {
         whereOr.push({ id: ids });
       }
